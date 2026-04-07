@@ -14,7 +14,7 @@
             "type": "python",
             "request": "launch",
             "program": "${workspaceFolder}/test drag n drop.py",
-            "args": ["${workspaceFolder}/vj7-apt.txt"],
+            "args": ["${workspaceFolder}/vj7-apt.txt", "tokarilica"],
             "console": "integratedTerminal",
             "justMyCode": true,
         }
