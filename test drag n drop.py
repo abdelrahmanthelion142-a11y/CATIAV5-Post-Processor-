@@ -35,8 +35,7 @@ try:
     with open(input_file, "r", encoding="utf-8") as f:
         for line in f:
             line = line.strip()
-            print(line)
-            parse.ParseLine(line)
+            parse.parseline(line)
             
             
 except UnicodeDecodeError:
