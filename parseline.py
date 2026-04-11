@@ -15,6 +15,12 @@ class parseline:
             self.commands = json.load(f)
 
     def parseline(self, line):
+        global lsmovement
+        global lsplane
+        global lstiprotation
+        global lsrotation
+        global lstipfedrejt
+        global lssklop
         if "/" in line:
             elements = line.split("/")
             command = elements[0].strip()
