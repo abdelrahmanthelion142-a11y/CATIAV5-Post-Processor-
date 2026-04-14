@@ -1,34 +1,44 @@
 import json
 import re
 import math
-lsmovement=""
-lsplane=""
-lstiprotation=""
-lsrotation=""
-lstipfedrejt=""
-
-ls_i=""
-ls_j=""
-ls_k=""
-
-
 
 class Myparseline:
+    lsmovement=""
+    lsplane=""
+    lstiprotation=""
+    lsrotation=""
+    lstipfedrejt=""
+    lssklop=""
     koord_x = 0
     koord_y = 0
     koord_z = 0
     ls_x = 0
     ls_y = 0
     ls_z = 0
-    lssklop=""
+    ls_i=0
+    ls_j=0
+    ls_k=0
+    D=0
+
+    
+    
     def __init__(self):
+        self.lsmovement=""
+        self.lsplane=""
+        self.lstiprotation=""
+        self.lsrotation=""
+        self.lstipfedrejt=""
+        self.lssklop=""
         self.koord_x = 0
         self.koord_y = 0
         self.koord_z = 0
         self.ls_x = 0
         self.ls_y = 0
         self.ls_z = 0
-        self.lssklop=""
+        self.ls_i = 0
+        self.ls_j = 0
+        self.ls_k = 0
+        self.D = 0
         
         with open("bible1.json", "r", encoding="utf-8") as f:
             self.commands = json.load(f)
@@ -36,17 +46,56 @@ class Myparseline:
     def parseline(self, line):
      
         if "CIRCLE" in line:
-            elements = line.split(" ")
-            command = elements[0].strip()
-            circle = elements[1].strip()
-            centar_x = elements[2].strip()
-            centar_y = elements[3].strip()
-            centar_z = elements[4].strip()
+            elements = line.split(" ","/",",")
+            centar_x = elements[3].strip()
+            centar_y = elements[4].strip()
+            centar_z = elements[5].strip()
+            radius = elements[6].strip()
+            centar2_x = elements[9].strip()
+            centar2_y = elements[10].strip()
+            centar2_z = elements[11].strip()
+            kraj_x = elements[12].strip()
+            kraj_y = elements[13].strip()
+            kraj_z = elements[14].strip()
+
+            if centar_x!=centar2_x or centar_y!=centar2_y or centar_z!=centar2_z:
+                print(f"Provjeriti {line} centri se ne poklapaju")
+            else:
+                print(end="")
             
-                
-                
+            if self.ls_plane == "G18":
+                vektor2_x=self.ls_x-centar_x
+                vektor2_z=self.ls_z-centar_z
+                D=self.ls_i*vektor2_y-vektor2_x*self.ls_k
+                if D<0:
+                    print("Desno")
+                elif D>0:
+                    print("Lijevo")
+                else:
+                    print("Provjeriti koord " + line)
+            elif self.ls_plane == "G17":
+                vektor2_y=self.ls_y-centar_y
+                vektor2_x=self.ls_x-centar_x
+                D=self.ls_i*vektor2_y-vektor2_x*self.ls_j
+                if D<0:
+                    print("Desno")
+                elif D>0:
+                    print("Lijevo")
+                else:
+                    print("Provjeriti koord " + line)
+            elif self.ls_plane == "G19":
+                vektor2_y=self.ls_y-centar_y
+                vektor2_z=self.ls_z-centar_z
+                D=self.ls_j*vektor2_z-vektor2_y*self.ls_k
+                if D<0:
+                    print("Desno")
+                elif D>0:
+                    print("Lijevo")
+                else:
+                    print("Provjeriti koord " + line)
+            else:
+                print(f"Provjeriti ravninu: {line}")
             
-        
         elif "/" in line:
             elements = line.split("/")
             command = elements[0].strip()
@@ -93,24 +142,12 @@ class Myparseline:
                 else:
                     print(f"Provjeriti koordinate: {line}")
                            
-   #             if float(y) == 0:
-    #                ravnina="G18"
-     #               koord=(f"X{x} Z{z}")
-      #          elif float(x) != 0:
-       #             ravnina="G17"
-        #            koord=(f"X{x} Y{y}")
-         #       elif float(z) != 0:
-          #          ravnina="G19"
-           #         koord=(f"Y{y} Z{z}")
-            #    else:
-             #       print(f"Provjeriti koordinate: {line}")
-                
-                if lsplane != ravnina:
+   
+                if self.lsplane != ravnina:
                     print(ravnina, end=" ")
-                    lsplane=ravnina                  
+                    self.lsplane=ravnina                  
                 else:
-                    print(end="")
-                    
+                    print(end="")  
                 print(self.koord_x, self.koord_y, self.koord_z)
                 self.ls_x=x
                 self.ls_y=y
@@ -129,9 +166,9 @@ class Myparseline:
                 else:
                     print(f"Provjeriti tip vrijednosti(spm ili rpm): {line}")
                     
-                if lstiprotation != tipfedrejt:
+                if self.lstiprotation != tipfedrejt:
                     print(tipfedrejt, end=" ")
-                    lstiprotation=tipfedrejt
+                    self.lstiprotation=tipfedrejt
                 else:
                     print(end="")
                     
@@ -142,12 +179,11 @@ class Myparseline:
                 else:
                     print(f"Provjeriti treću vrijednost (smjer vrtnje): {line}")
                     
-                if lsrotation != smjervrtnje:
+                if self.lsrotation != smjervrtnje:
                     print(smjervrtnje, end=" ")
-                    lsrotation=smjervrtnje
+                    self.lsrotation=smjervrtnje
                 else:
                     print(end="")
-                
                 print("S"+num)
                 
             elif command == "FEDRAT":
@@ -162,17 +198,17 @@ class Myparseline:
                 else:
                     print(f"Provjeriti feedrate vrijednost: {line}")
                     
-                if lstipfedrejt != fedrejt:
+                if self.lstipfedrejt != fedrejt:
                     print(fedrejt, end=" ")
-                    lstipfedrejt=fedrejt
+                    self.lstipfedrejt=fedrejt
                 else:
                     print(end="")
                     
                 movement="G1"
                 
-                if lsmovement != movement:
+                if self.lsmovement != movement:
                         print(movement, end=" ")
-                        lsmovement=movement
+                        self.lsmovement=movement
                 else:
                         print(end="")
                 
@@ -190,14 +226,14 @@ class Myparseline:
                 else:
                     print(end="")
                 
-            elif command == "SWITCH" or command == "LOADTL" or command == "CUTTER" or command == "TOOLNO" or command == "INTOL" or command =="OUTTOL" or command == "INDIRV":
+            elif command == "SWITCH" or command == "LOADTL" or command == "CUTTER" or command == "TOOLNO" or command == "INTOL" or command =="OUTTOL":
                 print(end="")
             
             elif command == "INDIRV":
                 vektor = elements[1].strip().split(",")
-                ls_i=vektor[0].strip()
-                ls_j=vektor[1].strip()
-                ls_k=vektor[2].strip()
+                self.ls_i=vektor[0].strip()
+                self.ls_j=vektor[1].strip()
+                self.ls_k=vektor[2].strip()
                
             else:
                     print(f"#Neispravna linija: {line}")
