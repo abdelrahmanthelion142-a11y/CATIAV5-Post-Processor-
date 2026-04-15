@@ -42,7 +42,7 @@ class Myparseline:
             if not line.strip():
                 print(end="")
             
-            elif "$$ OPERATION NAME :" in line:
+            elif line.startswith("$$ OPERATION NAME :"):
                 opname = line.split(":")
                 opname1 = opname[0].strip()
                 opname2 = opname[1].strip()
