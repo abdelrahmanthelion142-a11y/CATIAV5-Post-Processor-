@@ -4,6 +4,7 @@ import sys
 import logging
 from parseline import Myparseline
 
+
 # check if file was first argument
 if len(sys.argv) < 2:
     print("Nije predana datoteka.")
