@@ -15,7 +15,7 @@
             "type": "debugpy",
             "request": "launch",
             "program": "${workspaceFolder}/test drag n drop.py",
-            "args": ["${workspaceFolder}/apt2.txt", "tokarilica"],
+            "args": ["${workspaceFolder}/dwelltest.txt", "tokarilica"],
             "console": "integratedTerminal",
             "justMyCode": true
         }

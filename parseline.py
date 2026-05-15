@@ -2,6 +2,8 @@ import json
 import re
 import math
 
+# Tapping obavezno preko Output "CYCLE"
+# Naziv, parametri, kompenzacije i svi podaci alata u CATIA-i se MORAJU poklapati sa onima u WinNC-u
 class Myparseline:
     if 1==1:
         lsmovement=""
@@ -20,8 +22,7 @@ class Myparseline:
         ls_j=0.00000
         ls_k=0.00000
         D=0.00000    
-    else:
-        print(end="")
+
         
 
     
@@ -34,37 +35,37 @@ class Myparseline:
         self.lstipfedrejt=""
         self.lssklop=""
         self.lstip_rev=""
-        self.ls_x = 0.000
-        self.ls_y = 0.000
-        self.ls_z = 0.000
-        self.ls_i = 0.000
-        self.ls_j = 0.000
-        self.ls_k = 0.000
+        self.ls_x = 0.00000
+        self.ls_y = 0.00000
+        self.ls_z = 0.00000
+        self.ls_i = 0.00000
+        self.ls_j = 0.00000
+        self.ls_k = 0.00000
         self.D = 0.000
-        self.lsnum = 0.000
+        self.lsnum = 0.00000
         self.minnumf = math.inf
         
     def parseline(self, line):
 
             if not line.strip():
-                print(end="")
+                pass
             
             elif line.startswith("$$"):
-                if line.startswith("$$ OPERATION NAME"):
+                if "$$ OPERATION NAME" in line:
                     opname = line.split(":")
                     opname2 = opname[1].strip()
-            
-                    if "Tool" in opname2:
-                        print(end="")
-                    else:
-                        print(f";{opname2}")
-                elif line.startswith("$$ End of generation"):
+
+                    print(f";{opname2}")
+                
+                elif "End of generation" in line:
                     print("G0 X40 Z90")
+                
                 else:
-                    print(end="")
+                    line = re.sub(r"\$+", "", line)
+                    print(f";{line}")
             
-            elif line.startswith("SWITCH") or line.startswith("LOADTL") or line.startswith("CUTTER") or line.startswith("TOOLNO") or line.startswith("INTOL") or line.startswith("OUTTOL") or line.startswith("AUTOPS"):
-                print(end="")
+            elif line.startswith("SWITCH/") or line.startswith("LOADTL/") or line.startswith("CUTTER/") or line.startswith("TOOLNO/") or line.startswith("INTOL/") or line.startswith("OUTTOL/") or line.startswith("AUTOPS/") or line.startswith("REWIND/"):
+                print(f";{line}")
             
             elif "CIRCLE" in line:
                 elements = re.split(r'[ ,/()]+', line)
@@ -88,9 +89,7 @@ class Myparseline:
                 kraj_z = round(kraj_z, 3)
 
                 if centar_x!=centar2_x or centar_y!=centar2_y or centar_z!=centar2_z:
-                    print(f"Provjeriti {line} centri se ne poklapaju")
-                else:
-                    print(end="")
+                    print(f";Provjeriti {line} centri se ne poklapaju")
             
                 if self.lsplane == "G18":
                     vektor2_x=float(self.ls_x)-float(centar_x)
@@ -157,11 +156,6 @@ class Myparseline:
                 y = coords[2].strip()
                 z = coords[3].strip()
                 
-                if self.lsmovement !="G1":
-                    movement="G1"
-                else:
-                    movement=" "
-                
                 x = float(x)
                 y = float(y)
                 z = float(z)
@@ -205,98 +199,90 @@ class Myparseline:
                 if self.lsplane != ravnina:
                     print(ravnina, end=" ")
                     self.lsplane=ravnina                  
-                else:
-                    print(end="")
                     
-                print(movement,self.koord_x, self.koord_y, self.koord_z)
+                print(self.koord_x, self.koord_y, self.koord_z)
                 
                 self.ls_x=x
                 self.ls_y=y
                 self.ls_z=z
-                self.lsmovement=movement
                 
             elif line.startswith("SPINDL"):
-                spindlDT = re.split(r'[,/]+', line)
-                num = spindlDT[1].strip()
-                tip = spindlDT[2].strip()
-                rotation = spindlDT[3].strip()
+                if "OFF" in line:
+                    rotation="off"
+                elif "CLW" in line or "CCLW" in line:
+                    spindlDT = re.split(r'[,/]+', line)
+                    num = spindlDT[1].strip()
+                    tip = spindlDT[2].strip()
+                    rotation = spindlDT[3].strip()
                 
-                self.lsnum = round(float(num), 3)
+                    self.lsnum = round(float(num), 3)
                 
-                if tip == "SFM":
-                    tipfedrejt=("G96 ")
-                    self.lstip_rev=tip
-                elif tip == "RPM":
-                    tipfedrejt=("G97 ")
-                    self.lstip_rev=tip
-                else:
-                    print(f"Provjeriti tip vrijednosti(spm ili rpm): {line}")
+                    if tip == "SFM":
+                        tipfedrejt=("G96 ")
+                        self.lstip_rev=tip
+                    elif tip == "RPM":
+                        tipfedrejt=("G97 ")
+                        self.lstip_rev=tip
+                    else:
+                        print(f";Provjeriti tip vrijednosti (sfm ili rpm): {line}")
                     
-                if self.lstiprotation != tipfedrejt:
-                    print(tipfedrejt, end=" ")
-                    self.lstiprotation=tipfedrejt
+                    if self.lstiprotation != tipfedrejt:
+                        print(tipfedrejt, end=" ")
+                        self.lstiprotation=tipfedrejt
+                    
+                    print("S"+ str(round(float(num), 3)))
                 else:
-                    print(end="")
+                    print(f";Provjeriti kontekst linije (vrtnja vratila :OFF, CLW, CCLW:): {line}")
                     
                 if rotation == "CLW":
                     smjervrtnje=("M3 ")
                 elif rotation == "CCLW":
                     smjervrtnje=("M4 ")
+                elif rotation== "off":
+                    smjervrtnje=("M5 ")
                 else:
-                    print(f"Provjeriti treću vrijednost (smjer vrtnje): {line}")
+                    print(f";Provjeriti treću vrijednost (smjer vrtnje): {line}")
                     
                 if self.lsrotation != smjervrtnje:
                     print(smjervrtnje, end=" ")
+                    if smjervrtnje==("M5 "):
+                        print(" ")
                     self.lsrotation=smjervrtnje
-                else:
-                    print(end="")
                     
-                print("S"+ str(round(float(num), 3)))
-                
             elif line.startswith("FEDRAT"):
                 feed = re.split(r'[,/]+', line)
                 numf = feed[1].strip()
                 vrstaf = feed[2].strip()
                 
-                if self.minnumf > float(numf) and self.minnumf != 0.000:
+                if self.minnumf > float(numf) and self.minnumf >= 0.000:
                     self.minnumf = float(numf)
-                else:
-                    print(end="")
                 
                 if vrstaf == "MMPR":
                     fedrejt=("G95")   
                 elif vrstaf == "MMPM":  
                     fedrejt=("G94")
                 else:
-                    print(f"Provjeriti feedrate vrijednost: {line}")
+                    print(f";Provjeriti feedrate vrijednost (Treba pisati MMPR ili MMPM): {line}")
                     
                 if self.lstipfedrejt != fedrejt:
                     print(fedrejt, end=" ")
                     self.lstipfedrejt=fedrejt
-                else:
-                    print(end="")
                     
                 movement="G1"
                 
                 if self.lsmovement != movement:
                         print(movement, end=" ")
                         self.lsmovement=movement
-                else:
-                        print(end="")
                 
                 print("F"+ str(round(float(numf), 3)))
                 
             elif line.startswith("TPRINT"):
                 izbor_alat = re.split(r'[,/]+', line)
                 sklop = izbor_alat[1].strip()
-                drzac = izbor_alat[2].strip()
-                ostrica = izbor_alat[3].strip()
                 
                 if self.lssklop != sklop:
-                    print(f"T={sklop}")
+                    print(f"T=\"{sklop}\"")
                     self.lssklop=sklop
-                else:
-                    print(end="")
                 
             elif line.startswith("INDIRV"):
                 vektor = re.split(r'[,/]+', line)
@@ -308,10 +294,8 @@ class Myparseline:
                 if self.lsmovement != "G0":
                     print("G0 ")
                     self.lsmovement="G0"
-                else:
-                    print(end="")
             
-            elif line.startswith("FINI"):
+            elif line.startswith("FINI") or line.startswith("END"):
                 print(" G18 G0 X40 Z90\n M30")
             
             elif line.startswith("PARTNO"):
@@ -322,28 +306,52 @@ class Myparseline:
                 depth= tap[1].strip()
                 pitch= tap[2].strip()
                 
+                if self.lsrotation == "M3 ":
+                        returnsmj = "M4"
+                elif self.lsrotation == "M4 ":
+                        returnsmj = "M3"
+                else:
+                        print(f";Provjeriti prethodnu vrijednost smjera vrtnje: {line}")
+                        
                 holder=input(";Vrsta držača ureznice: pomični (Upišite 0) ili fiksni (Upišite 1): ")
+                
                 if holder == "0":
                     if self.lstip_rev == "SFM":
                         F=self.lsnum * pitch
                     elif self.lstip_rev == "RPM":
                         F=pitch
                     else:
-                        print("Provjeriti prethodnu vrijednost spindla ")
+                        print(f";Prethodni nacin pomaka nije SFM (brzina na površini) niti RPM (okretaji po minuti): {line}")
                     print(f"G63 Z{depth} F{F}")
-                    if self.lsrotation == "M3 ":
-                        returnsmj = "M4"
-                    elif self.lsrotation == "M4 ":
-                        returnsmj = "M3"
-                    else:
-                        print("Provjeriti prethodnu vrijednost smjera vrtnje")
                     print(f"G63 Z{self.ls_z} F{F} {returnsmj}")
                 elif holder == "1":
                     print(f"G331 Z{depth} F{pitch}")
-                    print(f"G332 Z{depth} F{pitch}")
+                    print(f"G332 Z{depth} {returnsmj}")
                 else:
-                    print("Krivi broj...")
+                    print(";Krivi broj...")
+            
+            elif line.startswith("COOLNT"):
+                coolnt=line.split("/")
+                yon=coolnt[1].strip()
+                if yon=="ON":
+                    print("M8")
+                elif yon=="OFF":
+                    print("M9")
+                else:
+                    print(f";Provjeriti (trebalo bi pisati ON ili OFF): {line}")
+            
+            elif line.startswith("DELAY"):
+                delay=line.split("/")
+                dwell=delay[1].strip()
+                
+                if "REV" in dwell:
+                    dwell=dwell.split(",")
+                    vrijeme=dwell[0].strip()
+                    
+                    print(f"G4 R{vrijeme}")
+                else:
+                    print(f"G4 S{round(float(dwell), 3)}")
             
             else:
-                print("Provjeriti: " + line)
+                print(f";Provjeriti (nije u niti jednoj kategoriji naredbe): {line}")
       
