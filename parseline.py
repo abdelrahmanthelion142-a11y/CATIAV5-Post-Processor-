@@ -19,15 +19,15 @@ class Myparseline:
         ls_i=0.00000
         ls_j=0.00000
         ls_k=0.00000
-        D=0.00000    
+        D=0.00000  
+        lsnum=0.00000
+        minnumf=0.01
 
-        
-
-    def __init__(self, LANG):
+    def __init__(self, LANG, ccmt):
         self.LANG = LANG
-    
-    
-    def __init__(self):
+        
+        self.ccmt = ccmt
+        
         self.lsmovement=""
         self.lsplane=""
         self.lstiprotation=""
@@ -43,7 +43,7 @@ class Myparseline:
         self.ls_k = 0.00000
         self.D = 0.000
         self.lsnum = 0.00000
-        self.minnumf = math.inf
+        self.minnumf = 0.01
         
     def parseline(self, line):
 
@@ -60,12 +60,12 @@ class Myparseline:
                 elif "End of generation" in line:
                     print("G0 X40 Z90")
                 
-                else:
+                elif line.startswith("$$") and self.ccmt==1:
                     line = re.sub(r"\$+", "", line)
                     print(f";{line}")
             
             elif line.startswith("SWITCH/") or line.startswith("LOADTL/") or line.startswith("CUTTER/") or line.startswith("TOOLNO/") or line.startswith("INTOL/") or line.startswith("OUTTOL/") or line.startswith("AUTOPS/") or line.startswith("REWIND/"):
-                print(f";{line}")
+                print(f"(nije def);{line}")
             
             elif line.startswith("TPRINT"):
                 izbor_alat = re.split(r'[,/]+', line)
@@ -80,7 +80,7 @@ class Myparseline:
                 centar_x = elements[3].strip()
                 centar_y = elements[4].strip()
                 centar_z = elements[5].strip()
-                radius = elements[6].strip()
+                #radius = elements[6].strip()
                 centar2_x = elements[9].strip()
                 centar2_y = elements[10].strip()
                 centar2_z = elements[11].strip()
@@ -97,7 +97,7 @@ class Myparseline:
                 kraj_z = round(kraj_z, 3)
 
                 if centar_x!=centar2_x or centar_y!=centar2_y or centar_z!=centar2_z:
-                    print(f";Provjeriti {line} centri se ne poklapaju")
+                    print(self.LANG["cta crc cent nije isti"], line)
             
                 if self.lsplane == "G18":
                     vektor2_x=float(self.ls_x)-float(centar_x)
@@ -112,7 +112,7 @@ class Myparseline:
                     elif D>0:
                         movement="G3"
                     else:
-                        print("Provjeriti koord " + line)
+                        print(self.LANG["sredina na tang"] + line)
                         
                     koord=f"X{kraj_x} Z{kraj_z} I{vektor2_x} K{vektor2_z}"
                     
@@ -129,7 +129,7 @@ class Myparseline:
                     elif D>0:
                         movement="G3"
                     else:
-                        print("Provjeriti koord " + line)
+                        print(self.LANG["sredina na tang"] + line)
                          
                     koord=f"X{kraj_x} Y{kraj_y} I{vektor2_x} J{vektor2_y}"
                     
@@ -146,10 +146,10 @@ class Myparseline:
                     elif D>0:
                         movement="G3"
                     else:
-                        print("Provjeriti koord " + line)
+                        print(self.LANG["sredina na tang"] + line)
                     koord=f"Y{kraj_y} Z{kraj_z} J{vektor2_y} K{vektor2_z}"
                 else:
-                    print(f"Provjeriti ravninu: {line}")
+                    print(self.LANG["nepoznata ravnina"] + line)
             
                 print(movement, koord, self.minnumf)
             
@@ -202,7 +202,7 @@ class Myparseline:
                     else:
                         self.koord_z=(f"Z{round(z, 3)}")       
                 else:
-                    print(f"Provjeriti koordinate: {line}")
+                    print(self.LANG["promjena 3x koord"] + line)
                            
                 if self.lsplane != ravnina:
                     print(ravnina, end=" ")
@@ -232,7 +232,7 @@ class Myparseline:
                         tipfedrejt=("G97 ")
                         self.lstip_rev=tip
                     else:
-                        print(f";Provjeriti tip vrijednosti (sfm ili rpm): {line}")
+                        print(self.LANG["nepoznat posmak"] + line)
                     
                     if self.lstiprotation != tipfedrejt:
                         print(tipfedrejt, end=" ")
@@ -240,7 +240,7 @@ class Myparseline:
                     
                     print("S"+ str(round(float(num), 3)))
                 else:
-                    print(f";Provjeriti kontekst linije (vrtnja vratila :OFF, CLW, CCLW:): {line}")
+                    print(self.LANG["spindle set"], line)
                     
                 if rotation == "CLW":
                     smjervrtnje=("M3 ")
@@ -353,5 +353,5 @@ class Myparseline:
                     print(f"G4 S{round(float(dwell), 3)}")
             
             else:
-                print(f";Provjeriti (nije u niti jednoj kategoriji naredbe): {line}")
+                print(self.LANG["Nepoznata naredba"], line)
       

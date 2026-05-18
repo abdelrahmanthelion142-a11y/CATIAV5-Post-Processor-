@@ -4,9 +4,9 @@ from parseline import Myparseline
 from jezici import HR, EN
 
 izbor = input("Choose language (HR/EN): ").strip().upper()
-if izbor == "HR":
+if izbor == "HR" or izbor == "1" or izbor == "HRV" or izbor == "HRVATSKI":
     LANG = HR
-elif izbor == "EN":
+elif izbor == "EN" or izbor == "2" or izbor == "ENG" or izbor == "ENGLISH":
     LANG = EN
 else:
     print("Invalid language choice. Defaulting to English.")
@@ -14,7 +14,14 @@ else:
 
 print(LANG["def programa"])
 
-
+catia_comments = input(LANG["catia comentari"]).strip().upper()
+if catia_comments == "DA" or catia_comments == "YES" or catia_comments == "1":
+    ccmt=1
+elif catia_comments == "NE" or catia_comments == "NO" or catia_comments == "0":
+    ccmt=0
+else:
+    print(LANG["kriv odabir za komt"])
+    ccmt=1
 
 # check if file was first argument
 if len(sys.argv) < 2:
@@ -40,6 +47,7 @@ if not os.path.isfile(input_file):
 print(LANG["Datoteka učitana:"], input_file)
 print(LANG["Učitavanje linija"])
 
+parse = Myparseline(LANG, ccmt)
 
 # provjeriti da li je zaista tekstualna datoteka
 try:
