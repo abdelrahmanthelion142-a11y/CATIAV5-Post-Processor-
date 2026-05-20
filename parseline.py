@@ -21,7 +21,7 @@ class Myparseline:
         ls_k=0.00000
         D=0.00000  
         lsnum=0.00000
-        minnumf=0.01
+        circlefeed=0
 
     def __init__(self, LANG, ccmt):
         self.LANG = LANG
@@ -43,7 +43,7 @@ class Myparseline:
         self.ls_k = 0.00000
         self.D = 0.000
         self.lsnum = 0.00000
-        self.minnumf = 0.01
+        self.circlefeed = 0
         
     def parseline(self, line):
 
@@ -60,12 +60,23 @@ class Myparseline:
                 elif "End of generation" in line:
                     print("G0 X40 Z90")
                 
-                elif line.startswith("$$") and self.ccmt==1:
+                elif self.ccmt==1:
                     line = re.sub(r"\$+", "", line)
                     print(f";{line}")
             
-            elif line.startswith("SWITCH/") or line.startswith("LOADTL/") or line.startswith("CUTTER/") or line.startswith("TOOLNO/") or line.startswith("INTOL/") or line.startswith("OUTTOL/") or line.startswith("AUTOPS/") or line.startswith("REWIND/"):
+            elif line.startswith("SWITCH/") or line.startswith("TOOLNO/") or line.startswith("INTOL/") or line.startswith("OUTTOL/") or line.startswith("AUTOPS/") or line.startswith("REWIND/"):
                 print(f"(nije def);{line}")
+            
+            elif self.ccmt==1 and (line.startswith("LOADTL/") or line.startswith("SELCTL/") or line.startswith("CUTTER/")):
+                if line.startswith("LOADTL/") or line.startswith("SELCTL/"):
+                    tooln = line.split("/")
+                    tool_slot = tooln[1].strip()
+                    print(self.LANG["magazine slot"] + tool_slot)
+            
+                elif line.startswith("CUTTER/"):
+                    cutter = line.split("/")
+                    r_ostrice = cutter[1].strip()
+                    print(self.LANG["insert r"] + r_ostrice + "mm")
             
             elif line.startswith("TPRINT"):
                 izbor_alat = re.split(r'[,/]+', line)
@@ -150,8 +161,11 @@ class Myparseline:
                     koord=f"Y{kraj_y} Z{kraj_z} J{vektor2_y} K{vektor2_z}"
                 else:
                     print(self.LANG["nepoznata ravnina"] + line)
+                    
+                if not (self.circlefeed > 0):
+                    self.circlefeed = round(float(input(self.LANG["circle feed"])), 3)
             
-                print(movement, koord, self.minnumf)
+                print(movement, koord, self.circlefeed)
             
                 self.ls_x=kraj_x
                 self.ls_y=kraj_y
@@ -217,44 +231,52 @@ class Myparseline:
             elif line.startswith("SPINDL"):
                 if "OFF" in line:
                     rotation="off"
-                elif "CLW" in line or "CCLW" in line:
+                else:
                     spindlDT = re.split(r'[,/]+', line)
                     num = spindlDT[1].strip()
                     tip = spindlDT[2].strip()
                     rotation = spindlDT[3].strip()
                 
                     self.lsnum = round(float(num), 3)
-                
-                    if tip == "SFM":
-                        tipfedrejt=("G96 ")
-                        self.lstip_rev=tip
-                    elif tip == "RPM":
-                        tipfedrejt=("G97 ")
-                        self.lstip_rev=tip
-                    else:
-                        print(self.LANG["nepoznat posmak"] + line)
+
+                    while True:
+                        if tip == "SFM":
+                            tipfedrejt=("G96 ")
+                            self.lstip_rev=tip
+                            break
+                        elif tip == "RPM":
+                            tipfedrejt=("G97 ")
+                            self.lstip_rev=tip
+                            break
+                        else:
+                            print(self.LANG["nepoznat posmak"] + line)
+                            tip = input(self.LANG["posmak"]).strip().upper()
                     
                     if self.lstiprotation != tipfedrejt:
                         print(tipfedrejt, end=" ")
                         self.lstiprotation=tipfedrejt
                     
                     print("S"+ str(round(float(num), 3)))
-                else:
-                    print(self.LANG["spindle set"], line)
-                    
-                if rotation == "CLW":
-                    smjervrtnje=("M3 ")
-                elif rotation == "CCLW":
-                    smjervrtnje=("M4 ")
-                elif rotation== "off":
-                    smjervrtnje=("M5 ")
-                else:
-                    print(f";Provjeriti treću vrijednost (smjer vrtnje): {line}")
+
+                while True:    
+                    if rotation == "CLW":
+                        smjervrtnje=("M3 ")
+                        break
+                    elif rotation == "CCLW":
+                        smjervrtnje=("M4 ")
+                        break
+                    elif rotation== "off":
+                        smjervrtnje=("M5 ")
+                        break
+                    else:
+                        rotation = input(self.LANG["spindle m3/m4"] + f" ({line})       : ").strip().upper()
                     
                 if self.lsrotation != smjervrtnje:
                     print(smjervrtnje, end=" ")
+                    
                     if smjervrtnje==("M5 "):
                         print(" ")
+                        
                     self.lsrotation=smjervrtnje
                     
             elif line.startswith("FEDRAT"):
@@ -262,15 +284,16 @@ class Myparseline:
                 numf = feed[1].strip()
                 vrstaf = feed[2].strip()
                 
-                if self.minnumf > float(numf) and self.minnumf >= 0.000:
-                    self.minnumf = float(numf)
-                
-                if vrstaf == "MMPR":
-                    fedrejt=("G95")   
-                elif vrstaf == "MMPM":  
-                    fedrejt=("G94")
-                else:
-                    print(f";Provjeriti feedrate vrijednost (Treba pisati MMPR ili MMPM): {line}")
+                while True:
+                    if vrstaf == "MMPR" or vrstaf == "REV":
+                        fedrejt=("G95")
+                        break   
+                    elif vrstaf == "MMPM" or vrstaf == "MIN":  
+                        fedrejt=("G94")
+                        break
+                    else:
+                        print(self.LANG["feedrat err"] + line)
+                        vrstaf = input(self.LANG["feedrat"]).strip().upper()
                     
                 if self.lstipfedrejt != fedrejt:
                     print(fedrejt, end=" ")
@@ -306,39 +329,48 @@ class Myparseline:
                 depth= tap[1].strip()
                 pitch= tap[2].strip()
                 
-                if self.lsrotation == "M3 ":
+                while True:
+                    if self.lsrotation == "M3 " or self.lsrotation == "CLW ":
                         returnsmj = "M4"
-                elif self.lsrotation == "M4 ":
+                        break
+                    elif self.lsrotation == "M4 " or self.lsrotation == "CCLW ":
                         returnsmj = "M3"
-                else:
-                        print(f";Provjeriti prethodnu vrijednost smjera vrtnje: {line}")
-                        
-                holder=input(";Vrsta držača ureznice: pomični (Upišite 0) ili fiksni (Upišite 1): ")
-                
-                if holder == "0":
-                    if self.lstip_rev == "SFM":
-                        F=self.lsnum * pitch
-                    elif self.lstip_rev == "RPM":
-                        F=pitch
+                        break
                     else:
-                        print(f";Prethodni nacin pomaka nije SFM (brzina na površini) niti RPM (okretaji po minuti): {line}")
-                    print(f"G63 Z{depth} F{F}")
-                    print(f"G63 Z{self.ls_z} F{F} {returnsmj}")
-                elif holder == "1":
-                    print(f"G331 Z{depth} F{pitch}")
-                    print(f"G332 Z{depth} {returnsmj}")
-                else:
-                    print(";Krivi broj...")
+                        self.lsrotation = input(self.LANG["spindle m3/m4"]).strip().upper() + " "
+                        
+                while True:
+                    holder = input(self.LANG["holder type"]).strip()
+                    if holder == "0":
+                        if self.lstip_rev == "SFM":
+                            F = self.lsnum * pitch
+                        elif self.lstip_rev == "RPM":
+                            F = pitch
+                        else:
+                            print(self.LANG["nepoznat posmak"] + line)
+                        print(f"G63 Z{depth} F{F}")
+                        print(f"G63 Z{self.ls_z} F{F} {returnsmj}")
+                        break
+                    elif holder == "1":
+                        print(f"G331 Z{depth} F{pitch}")
+                        print(f"G332 Z{depth} {returnsmj}")
+                        break
+                    else:
+                        print(self.LANG[";Krivi broj"])
             
             elif line.startswith("COOLNT"):
                 coolnt=line.split("/")
-                yon=coolnt[1].strip()
-                if yon=="ON":
-                    print("M8")
-                elif yon=="OFF":
-                    print("M9")
-                else:
-                    print(f";Provjeriti (trebalo bi pisati ON ili OFF): {line}")
+                clon=coolnt[1].strip()
+                while True:
+                    if clon=="ON" or clon==1:
+                        print("M8")
+                        break
+                    elif clon=="OFF" or clon==0:
+                        print("M9")
+                        break
+                    else:
+                        print(self.LANG["coolnt on off"] + line)
+                        clon = input(self.LANG["coolant"]).strip().upper()
             
             elif line.startswith("DELAY"):
                 delay=line.split("/")

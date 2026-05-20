@@ -3,17 +3,29 @@ import sys
 from parseline import Myparseline
 from jezici import HR, EN
 
-izbor = input("Choose language (HR/EN): ").strip().upper()
-if izbor == "HR" or izbor == "1" or izbor == "HRV" or izbor == "HRVATSKI":
-    LANG = HR
-elif izbor == "EN" or izbor == "2" or izbor == "ENG" or izbor == "ENGLISH":
-    LANG = EN
-else:
-    print("Invalid language choice. Defaulting to English.")
-    LANG = EN
+while True:
+    izbor = input("Choose language (HR/EN): ").strip().upper()
+    if izbor == "HR" or izbor == "1" or izbor == "HRV" or izbor == "HRVATSKI":
+        LANG = HR
+        break
+    elif izbor == "EN" or izbor == "2" or izbor == "ENG" or izbor == "ENGLISH":
+        LANG = EN
+        break
+    else:
+        print("- Invalid choice. Please enter HR or EN.")
 
 print(LANG["def programa"])
 
+while True:
+    catia_comments = input(LANG["catia comentari"]).strip().upper()
+    if catia_comments == "DA" or catia_comments == "YES" or catia_comments == "1":
+        ccmt=1
+        break
+    elif catia_comments == "NE" or catia_comments == "NO" or catia_comments == "0":
+        ccmt=0
+        break
+    else:
+        print(LANG["kriv odabir za komt"])
 catia_comments = input(LANG["catia comentari"]).strip().upper()
 if catia_comments == "DA" or catia_comments == "YES" or catia_comments == "1":
     ccmt=1
