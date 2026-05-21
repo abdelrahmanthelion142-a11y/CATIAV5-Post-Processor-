@@ -26,14 +26,20 @@ while True:
         break
     else:
         print(LANG["kriv odabir za komt"])
-catia_comments = input(LANG["catia comentari"]).strip().upper()
-if catia_comments == "DA" or catia_comments == "YES" or catia_comments == "1":
-    ccmt=1
-elif catia_comments == "NE" or catia_comments == "NO" or catia_comments == "0":
-    ccmt=0
-else:
-    print(LANG["kriv odabir za komt"])
-    ccmt=1
+        continue
+
+while True:
+    spindle_start = input(LANG["spindle start"]).strip().upper()
+    if spindle_start == "DA" or spindle_start == "YES" or spindle_start == "1":
+        ss=1
+        break
+    elif spindle_start == "NE" or spindle_start == "NO" or spindle_start == "0":
+        ss=0
+        break
+    else:
+        print(LANG["krivi spindle start"])
+        continue
+
 
 # check if file was first argument
 if len(sys.argv) < 2:
@@ -59,7 +65,7 @@ if not os.path.isfile(input_file):
 print(LANG["Datoteka učitana:"], input_file)
 print(LANG["Učitavanje linija"])
 
-parse = Myparseline(LANG, ccmt)
+parse = Myparseline(LANG, ccmt, ss)
 
 # provjeriti da li je zaista tekstualna datoteka
 try:

@@ -1,6 +1,6 @@
 
 HR = {
-    "def programa"              : "- Post processor 3-aksijalne obare tokarenjem za CATIA APT file u WinNC G-kod ",
+    "def programa"              : "- Post processor 3-aksijalne obare tokarenjem za CATIA APT file u WinNC G-kod \n -SVI PODACI O NOŽEVIMA MORAJU BITI ISTI U OBA PROGRAMA \n- Za urezivanje navoja, potrebno je definirati operaciju kao Cycle \n- Pod naredbom FEEDRAT ne smije biti naredba RAPTO ",
     "Nije predana datoteka."    : "Nije predana datoteka. ",
     "Nepostojeća datoteka."     : "Nepostojeća datoteka. ",
     "Neispravna vrsta"          : "Neispravna vrsta datoteke (potrebno je .txt). ",
@@ -16,9 +16,9 @@ HR = {
     "nepoznata ravnina"         : "Greška - ravnina nepravilno zapamćena nije (G17, G18 ili G19): ",
     "promjena 3x koord"         : "Greška - promjena 3 koordinate u jednoj liniji: ",
     "nepoznat posmak"           : "- Provjeriti način posmaka (sfm ili rpm): ",
-    "coolnt on off"             : "- Provjeriti (trebalo bi pisati ON ili OFF): ",
+    "coolnt on off"             : "- Provjeriti liniju i unijeti vrijednost (ON/OFF/FLOOD/MIST): ",
     "coolant"                   : "- Unesite ON ili OFF: ",
-    "spindle m3/m4"             : "- Provjeriti i unijeti vrijednost smjera vrtnje (CCLW/CLW): ",
+    "spindle m3/m4"             : "- Provjeriti i unijeti vrijednost smjera vrtnje (CCLW/CLW/OFF): ",
     "holder type"               : "- Definirajte vrstu držača ureznice: pomični (Upišite 0) ili fiksni (Upišite 1): ",
     "nepoznat posmak"           : "- Provjeriti način posmaka (RPM ili SFM): ",
     ";Krivi broj"               : "- Krivi broj...",
@@ -26,7 +26,11 @@ HR = {
     "posmak"                    : "- Unesite RPM ili SFM: ",
     "circle feed"               : "- Unesite brzinu posmaka za kružne pokrete za grubu i finu obradu: ",
     "magazine slot"             : "Pozicija na magazinu broj ",
-    "insert r"                  : "Radijus oštrice: "
+    "insert r"                  : "Radijus oštrice: ",
+    "spindle start"             : "- Prilikom pokretanja vretena iz M05 u M03/M04, trebali ponovo ispisivati okretaje / brzinu rezanja i smjer vrtnje ne? (DA/NE): ",
+    "krivi spindle start"       : "- Neispravan odabir unesite ponovo",
+    "ls-clnt"                   : "- Odabrite način podmazivanja (FLOOD/MIST): "
+
 }
 
 EN = {
@@ -46,9 +50,9 @@ EN = {
     "nepoznata ravnina"         : "Error - plane not properly remembered (G17, G18 or G19): ",
     "promjena 3x koord"         : "Error - change of 3 coordinates in one line: ",
     "nepoznat posmak"           : "- Check the type of feedrate (sfm or rpm): ",
-    "coolnt on off"             : "- Check (should be ON or OFF): ",
+    "coolnt on off"             : "- Check and enter the value (ON/OFF/FLOOD/MIST): ",
     "coolant"                   : "- Enter ON or OFF: ",
-    "spindle m3/m4"             : "- Check and enter the value of spindle rotation direction (CCLW/CLW): ",
+    "spindle m3/m4"             : "- Check and enter the value of spindle rotation direction (CCLW/CLW/OFF): ",
     "holder type"               : "- Type of tool holder: moving (Enter 0) or fixed (Enter 1): ",
     "nepoznat posmak"           : "- Check the type of feedrate (RPM or SFM): ",
     ";Krivi broj"               : "- Wrong number...",
@@ -56,5 +60,8 @@ EN = {
     "posmak"                    : "- Enter RPM or SFM: ",
     "circle feed"               : "- Enter the feedrate for circular motions for rough and finish machining: ",
     "magazine slot"             : "Magazine slot number ",
-    "insert r"                  : "Insert radius: "
+    "insert r"                  : "Insert radius: ",
+    "spindle start"             : "- When starting spindle from M05 to M03/M04, is it needed to reprint the rpm value / cutting speed and rotation direction? (YES/NO): ",
+    "krivi spindle start"       : "- Invalid choice, please enter again",
+    "ls-clnt"                   : "- Odabrite način podmazivanja (FLOOD/MIST): "
 }

@@ -15,7 +15,7 @@
             "type": "debugpy",
             "request": "launch",
             "program": "${workspaceFolder}/apt-gcode converter 1.py",
-            "args": ["${workspaceFolder}/taping.txt", "tokarilica"],
+            "args": ["${workspaceFolder}/kosta.txt", "tokarilica"],
             "console": "integratedTerminal",
             "justMyCode": true
         }

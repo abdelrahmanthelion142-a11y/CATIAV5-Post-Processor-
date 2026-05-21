@@ -3,30 +3,15 @@ import math
 # Tapping obavezno preko Output "CYCLE"
 # Naziv, parametri, kompenzacije i svi podaci alata u CATIA-i se MORAJU poklapati sa onima u WinNC-u
 class Myparseline:
-    if 1==1:
-        lsmovement=""
-        lsplane=""
-        lstiprotation=""
-        lsrotation=""
-        lstipfedrejt=""
-        lssklop=""
-        koord_x = 0.00000
-        koord_y = 0.00000
-        koord_z = 0.00000
-        ls_x = 0.00000
-        ls_y = 0.00000
-        ls_z = 0.00000
-        ls_i=0.00000
-        ls_j=0.00000
-        ls_k=0.00000
-        D=0.00000  
-        lsnum=0.00000
-        circlefeed=0
+  
+        
 
-    def __init__(self, LANG, ccmt):
+    def __init__(self, LANG, ccmt, ss):
         self.LANG = LANG
         
         self.ccmt = ccmt
+        
+        self.ss = ss
         
         self.lsmovement=""
         self.lsplane=""
@@ -44,6 +29,11 @@ class Myparseline:
         self.D = 0.000
         self.lsnum = 0.00000
         self.circlefeed = 0
+        self.ls_on_rotation = ""
+        self.ls_dim_typ = ""
+        self.ls_clnt_typ = ""
+        self.ls_clnt = ""
+        
         
     def parseline(self, line):
 
@@ -56,9 +46,6 @@ class Myparseline:
                     opname2 = opname[1].strip()
 
                     print(f";{opname2}")
-                
-                elif "End of generation" in line:
-                    print("G0 X40 Z90")
                 
                 elif self.ccmt==1:
                     line = re.sub(r"\$+", "", line)
@@ -171,8 +158,78 @@ class Myparseline:
                 self.ls_y=kraj_y
                 self.ls_z=kraj_z
                 self.lsmovement=movement
-                      
+            
+            elif line.startswith("GODLTA"):
+                if self.ls_dim_typ != "G91":
+                    print("G91", end=" ")
+                    self.ls_dim_typ="G91"
+                    
+                coords = re.split(r'[,/]+', line)
+                if len(coords)==4:
+                    x = coords[1].strip()
+                    y = coords[2].strip()
+                    z = coords[3].strip()
+                    
+                elif len(coords)==2:
+                    x = "0"
+                    y = "0"
+                    z = coords[1].strip()
+                    
+                else:
+                    print("Neispravan golta value" + line)
+                    return
+                
+                x = float(x)
+                y = float(y)
+                z = float(z)
+                
+                if y==0:
+                    self.koord_y=" "
+                    ravnina="G18"
+                    if x==0:
+                        self.koord_x=" "
+                    else:
+                        self.koord_x=(f"X{round(x, 3)}")
+                    if z==0:
+                        self.koord_z=" "                    
+                    else:
+                        self.koord_z=(f"Z{round(z, 3)}")      
+                elif x!=0:
+                    self.koord_z=" "
+                    ravnina="G17"
+                    if x==0:
+                        self.koord_x=" "
+                    else:
+                        self.koord_x=(f"X{round(x, 3)}")
+                    if y==0:
+                        self.koord_y=" "
+                    else:
+                        self.koord_y=(f"Y{round(y, 3)}")       
+                elif z!=0:  
+                    self.koord_x=" "
+                    ravnina="G19"
+                    if y==0:
+                        self.koord_y=" "
+                    else:
+                        self.koord_y=(f"Y{round(y, 3)}")
+                    if z==0:
+                        self.koord_z=" "                    
+                    else:
+                        self.koord_z=(f"Z{round(z, 3)}")       
+                else:
+                    print(self.LANG["promjena 3x koord"] + line)
+                    
+                if self.lsplane != ravnina:
+                    print(ravnina, end=" ")
+                    self.lsplane=ravnina                  
+                    
+                print(self.koord_x, self.koord_y, self.koord_z)
+        
             elif line.startswith("GOTO"):
+                if self.ls_dim_typ != "G90":
+                    print("G90", end=" ")
+                    self.ls_dim_typ="G90"
+                
                 coords = re.split(r'[,/]+', line)
                 x = coords[1].strip()
                 y = coords[2].strip()
@@ -230,8 +287,8 @@ class Myparseline:
                 
             elif line.startswith("SPINDL"):
                 if "OFF" in line:
-                    rotation="off"
-                else:
+                    rotation="OFF"
+                elif not ("ON" in line):
                     spindlDT = re.split(r'[,/]+', line)
                     num = spindlDT[1].strip()
                     tip = spindlDT[2].strip()
@@ -257,19 +314,28 @@ class Myparseline:
                         self.lstiprotation=tipfedrejt
                     
                     print("S"+ str(round(float(num), 3)))
+                    
+                elif "ON" in line:
+                    print(self.ls_on_rotation)
+                    if self.ss==1:
+                        print("S"+ str(self.lsnum)+ " " + self.lstip_rev)
+                    
 
                 while True:    
                     if rotation == "CLW":
                         smjervrtnje=("M3 ")
+                        self.ls_on_rotation="M3 "
                         break
                     elif rotation == "CCLW":
                         smjervrtnje=("M4 ")
+                        self.ls_on_rotation="M4 "
                         break
-                    elif rotation== "off":
+                    elif rotation== "OFF":
                         smjervrtnje=("M5 ")
                         break
                     else:
                         rotation = input(self.LANG["spindle m3/m4"] + f" ({line})       : ").strip().upper()
+                        continue
                     
                 if self.lsrotation != smjervrtnje:
                     print(smjervrtnje, end=" ")
@@ -280,6 +346,9 @@ class Myparseline:
                     self.lsrotation=smjervrtnje
                     
             elif line.startswith("FEDRAT"):
+                if "RAPTO" in line:
+                    line = line.split("RAPTO")[0].strip()
+                
                 feed = re.split(r'[,/]+', line)
                 numf = feed[1].strip()
                 vrstaf = feed[2].strip()
@@ -317,9 +386,131 @@ class Myparseline:
                 if self.lsmovement != "G0":
                     print("G0 ")
                     self.lsmovement="G0"
-            
+                    
+                if "GOTO" in line:
+                    if self.ls_dim_typ != "G90":
+                        print("G90", end=" ")
+                        self.ls_dim_typ="G90"
+                    
+                    elements = re.split(r'[ ,/]+', line)
+                    x = elements[1].strip()
+                    y = elements[2].strip()
+                    z = elements[3].strip()
+                    
+                    x = float(x)
+                    y = float(y)
+                    z = float(z)
+                    
+                    if y==self.ls_y:
+                        self.koord_y=" "
+                        ravnina="G18"
+                        if x==self.ls_x:
+                            self.koord_x=" "
+                        else:
+                            self.koord_x=(f"X{round(x, 3)}")
+                        if z==self.ls_z:
+                            self.koord_z=" "                    
+                        else:
+                            self.koord_z=(f"Z{round(z, 3)}")      
+                    elif x!=self.ls_x:
+                        self.koord_z=" "
+                        ravnina="G17"
+                        if x==self.ls_x:
+                            self.koord_x=" "
+                        else:
+                            self.koord_x=(f"X{round(x, 3)}")
+                        if y==self.ls_y:
+                            self.koord_y=" "
+                        else:
+                            self.koord_y=(f"Y{round(y, 3)}")       
+                    elif z!=self.ls_z:
+                        self.koord_x=" "
+                        ravnina="G19"
+                        if y==self.ls_y:
+                            self.koord_y=" "
+                        else:
+                            self.koord_y=(f"Y{round(y, 3)}")
+                        if z==self.ls_z:
+                            self.koord_z=" "                    
+                        else:
+                            self.koord_z=(f"Z{round(z, 3)}")       
+                    else:
+                        print(self.LANG["promjena 3x koord"] + line)
+                           
+                    if self.lsplane != ravnina:
+                        print(ravnina, end=" ")
+                        self.lsplane=ravnina                  
+                
+                    self.ls_x=x
+                    self.ls_y=y
+                    self.ls_z=z
+                    
+                elif line.startswith("GODLTA"):
+                    if self.ls_dim_typ != "G91":
+                        print("G91", end=" ")
+                        self.ls_dim_typ="G91"
+                    
+                    
+                    coords = re.split(r'[,/]+', line)
+                    
+                    if len(coords)==4:
+                        x = coords[1].strip()
+                        y = coords[2].strip()
+                        z = coords[3].strip()
+                    elif len(coords)==2:
+                        x = "0"
+                        y = "0"
+                        z = coords[1].strip()
+                    else:
+                        Neispravan golta value
+                    x = float(x)
+                    y = float(y)
+                    z = float(z)
+                
+                    if y==0:
+                        self.koord_y=" "
+                        ravnina="G18"
+                        if x==0:
+                            self.koord_x=" "
+                        else:
+                            self.koord_x=(f"X{round(x, 3)}")
+                        if z==0:
+                            self.koord_z=" "                    
+                        else:
+                            self.koord_z=(f"Z{round(z, 3)}")      
+                    elif x!=0:
+                        self.koord_z=" "
+                        ravnina="G17"
+                        if x==0:
+                            self.koord_x=" "
+                        else:
+                            self.koord_x=(f"X{round(x, 3)}")
+                        if y==0:
+                            self.koord_y=" "
+                        else:
+                            self.koord_y=(f"Y{round(y, 3)}")       
+                    elif z!=0:  
+                        self.koord_x=" "
+                        ravnina="G19"
+                        if y==0:
+                            self.koord_y=" "
+                        else:
+                            self.koord_y=(f"Y{round(y, 3)}")
+                        if z==0:
+                            self.koord_z=" "                    
+                        else:
+                            self.koord_z=(f"Z{round(z, 3)}")       
+                    else:
+                        print(self.LANG["promjena 3x koord"] + line)
+                    
+                    if self.lsplane != ravnina:
+                        print(ravnina, end=" ")
+                        self.lsplane=ravnina
+                    
+                print(self.koord_x, self.koord_y, self.koord_z)
+                               
             elif line.startswith("FINI") or line.startswith("END"):
-                print(" G18 G0 X40 Z90\n M30")
+                print("M30")
             
             elif line.startswith("PARTNO"):
                 print("G55" + "\n" + "DIAMOF" + "\n" + "#DEFINIRATI SIROVAC")
@@ -359,18 +550,38 @@ class Myparseline:
                         print(self.LANG[";Krivi broj"])
             
             elif line.startswith("COOLNT"):
-                coolnt=line.split("/")
-                clon=coolnt[1].strip()
                 while True:
-                    if clon=="ON" or clon==1:
-                        print("M8")
+                    if "OFF" in line or "FLOOD" in line or "MIST" in line:
+                        coolnt=line.split("/")
+                        clon=coolnt[1].strip()
                         break
-                    elif clon=="OFF" or clon==0:
+                    else:
+                        clon = input(self.LANG["coolnt on off"] + line + "--> : ").strip().upper()
+                        continue
+                    
+                while True:
+                    if clon=="ON" or clon=="1":
+                        print(self.ls_clnt_typ)
+
+                        break
+                    elif clon=="OFF" or clon=="0":
                         print("M9")
+                        self.ls_clnt="M9"
+                        break
+                    elif clon=="FLOOD" or clon=="2":
+                        print("M8")
+                        self.ls_clnt_typ="M8"
+                        self.ls_clnt="M8"
+                        break
+                    elif clon=="MIST" or clon=="3":
+                        print("M7")
+                        self.ls_clnt_typ="M7"
+                        self.ls_clnt="M7"
                         break
                     else:
                         print(self.LANG["coolnt on off"] + line)
                         clon = input(self.LANG["coolant"]).strip().upper()
+                        continue
             
             elif line.startswith("DELAY"):
                 delay=line.split("/")
