@@ -538,7 +538,7 @@ class Myparseline:
                 
                 if "TAP" in line:
                     tap= line.split(",")
-                    depth= tap[1].strip()
+                    dubina= tap[1].strip()
                     pitch= tap[2].strip()
                 
                     while True:
@@ -551,6 +551,11 @@ class Myparseline:
                         else:
                             self.lsrotation = input(self.LANG["spindle m3/m4"]).strip().upper() + " "
                             continue
+                    
+                    povrsina = float(input(self.LANG["tap depth"] ).strip()) 
+                          
+                    depth = round((povrsina - float(dubina)), 3)
+                    
                     while True:
                         holder = input(self.LANG["holder type"]).strip()
                         if holder == "0":
@@ -560,12 +565,12 @@ class Myparseline:
                                 F = pitch
                             else:
                                 print(self.LANG["nepoznat posmak"] + line)
-                            print(f"G63 Z{depth} F{F} \n G63 Z{self.ls_z} F{F} {returnsmj}")
                             self.ls_cycle="G63 Z"+str(depth)+" F"+str(F)+" "+returnsmj
+                            print(self.ls_cycle)
                             break
                         elif holder == "1":
-                            print(f"G331 Z{depth} F{pitch} \n G332 Z{depth} {returnsmj}")
                             self.ls_cycle="G331 Z"+str(depth)+" F"+str(pitch)+" \n G332 Z"+str(depth)+" "+returnsmj
+                            print(self.ls_cycle)
                             break
                         else:
                             print(self.LANG[";Krivi broj"])
@@ -580,35 +585,75 @@ class Myparseline:
                 elif line.startswith("CYCLE/DRILL"):
                     elements = line.split(",")
                     depth = elements[1].strip()
-                    fedrejt = elements[2].strip()
-                    posmak = elements[3].strip()
-                    clearance = elements[4].strip()
+                    posmak = elements[2].strip()
+                    fedrejt = elements[3].strip()
                     
                     while True:
-                        os=input(self.LANG["cycle drill"]).strip().upper()
-                        povrsina=float(input).strip()
-                        smjer=input.strip().upper()
-                        
-                        if os == "X" or os == "Y" or os == "Z":
+                        if fedrejt == "MMPR" or fedrejt == "REV":
+                            self.lstipfedrejt = "G95"
+                            print(self.lstipfedrejt)
+                            break
+                        elif fedrejt == "MMPM" or fedrejt == "MIN":
+                            self.lstipfedrejt = "G94"
+                            print(self.lstipfedrejt)
                             break
                         else:
-                            print(self.LANG["krivi spindle start"]+ " (X/Y/Z)")
+                            print(self.LANG["feedrat err"] + line)
+                            fedrejt = input(self.LANG["feedrat"]).strip().upper()
                             continue
-                        
                     
-                                      
-                    if os == "X" or os == "Z":
-                        r_povrsina="G18"                           
-                    elif os == "Y":
-                        r_povrsina="G17"
-                        
-                    if posmak == "UZ" or posmak == "+":
-                        clearance_koord = round((float(povrsina) + float(clearance)),3)
-                    elif posmak == "NIZ" or posmak == "-":
-                        clearance_koord = round((float(povrsina) - float(clearance)),3)                         
-                            
-                        
-            
+                    self.ls_cycle = "G81 X" + self.ls_x + " Y" + self.ls_y + " Z" + depth + " R" + self.ls_z + " F" + posmak
+                    print(self.ls_cycle)
+                    
+                elif line.startswith("CYCLE/DEEP"):
+                    elements = line.split(",")
+                    depth = elements[1].strip()
+                    posmak = elements[2].strip()
+                    fedrejt = elements[3].strip()
+                    clearance = elements[4].strip()
+                    incr = elements[5].strip()
+                    peck = elements[6].strip()
+                    
+                    while True:
+                        if fedrejt == "MMPR" or fedrejt == "REV":
+                            self.lstipfedrejt = "G95"
+                            print(self.lstipfedrejt)
+                            break
+                        elif fedrejt == "MMPM" or fedrejt == "MIN":
+                            self.lstipfedrejt = "G94"
+                            print(self.lstipfedrejt)
+                            break
+                        else:
+                            print(self.LANG["feedrat err"] + line)
+                            fedrejt = input(self.LANG["feedrat"]).strip().upper()
+                            continue
+                    
+                    self.ls_cycle = "G83 X" + self.ls_x + " Y" + self.ls_y + " Z" + depth + " R" + self.ls_z + " F" + posmak + " Q" + peck
+                    print(self.ls_cycle)
+                
+                elif line.startswith("CYCLE/BORE"):
+                    elements = line.split(",")
+                    depth = elements[1].strip()
+                    posmak = elements[2].strip()
+                    fedrejt = elements[3].strip()
+                    
+                    while True:
+                        if fedrejt == "MMPR" or fedrejt == "REV":
+                            self.lstipfedrejt = "G95"
+                            print(self.lstipfedrejt)
+                            break
+                        elif fedrejt == "MMPM" or fedrejt == "MIN":
+                            self.lstipfedrejt = "G94"
+                            print(self.lstipfedrejt)
+                            break
+                        else:
+                            print(self.LANG["feedrat err"] + line)
+                            fedrejt = input(self.LANG["feedrat"]).strip().upper()
+                            continue
+                    
+                    self.ls_cycle = "G85 X" + self.ls_x + " Y" + self.ls_y + " Z" + depth + " R" + self.ls_z + " F" + posmak
+                    print(self.ls_cycle)
+                                                                                                            
             elif line.startswith("COOLNT"):
                 while True:
                     if "OFF" in line or "FLOOD" in line or "MIST" in line:

@@ -1,6 +1,6 @@
 
 HR = {
-    "def programa"              : "- Post processor 3-aksijalne obare tokarenjem za CATIA APT file u WinNC G-kod \n -SVI PODACI O NOŽEVIMA MORAJU BITI ISTI U OBA PROGRAMA \n- Za urezivanje navoja, potrebno je definirati operaciju kao Cycle \n- Pod naredbom FEEDRAT ne smije biti naredba RAPTO \n- Nema definiranja linija ili točaka \n- Nema pomaka do točke, linje ili površine \n- Nema makro rutina \n-Nema definiranja varijabli \n-Nema grananja u programu\n- Nema logičkih uvjeta",
+    "def programa"              : "- Post processor 3-aksijalne obare tokarenjem za CATIA APT file u WinNC G-kod \n -SVI PODACI O NOŽEVIMA MORAJU BITI ISTI U OBA PROGRAMA \n- Za urezivanje navoja, potrebno je definirati operaciju kao Cycle \n- Pod naredbom FEEDRAT ne smije biti naredba RAPTO \n- Nema definiranja linija ili točaka \n- Nema pomaka do točke, linje ili površine \n- Nema makro rutina \n-Nema definiranja varijabli \n-Nema grananja u programu\n- Nema logičkih uvjeta\n- Nema korištenja CYCLE outputa osim za urecnice",
     "Nije predana datoteka."    : "Nije predana datoteka. ",
     "Nepostojeća datoteka."     : "Nepostojeća datoteka. ",
     "Neispravna vrsta"          : "Neispravna vrsta datoteke (potrebno je .txt). ",
@@ -35,12 +35,14 @@ HR = {
     "outtol"                    : ";Vanjska tolerancija putanje: ",
     "toler"                     : ";Tolerancija putanje: ",
     "Nema ciklusa"              : "Greška - Nema definiranog ciklusa: ",
-    "cycle drill"               : "- Unesite: os rupe (X/Y/Z) (potom kliknite Enter) pa visinu površine u odnosu na W točku po toj osi (potom kliknite Enter) pa unesite buši li se niz os (-/niz) ili uz os (+/uz) (potom kliknite Enter): "
+    "cycle drill"               : "- Unesite: os rupe (X/Y/Z) (potom kliknite Enter) pa visinu površine u odnosu na W točku po toj osi (potom kliknite Enter) pa unesite buši li se niz os (-/niz) ili uz os (+/uz) (potom kliknite Enter): ",
+    "tap depth"                 : "- Unesite visinu površine u odnosu na w točku (mm): "
+
 
 }
 
 EN = {
-    "def programa"              : "- Post processor for 3-axis lathe for CATIA APT file to WinNC G-code \n -ALL TOOL DATA MUST BE THE SAME IN BOTH PROGRAMS \n- For threading, it is necessary to define the operation as Cycle \n- After FEEDRAT command there must be no RAPTO command \n- No defining lines or points \n- No move to point, line or surface command \n- No macro routines \n-No defining variables \n-No program branching \n- No logical conditions",
+    "def programa"              : "- Post processor for 3-axis lathe for CATIA APT file to WinNC G-code \n -ALL TOOL DATA MUST BE THE SAME IN BOTH PROGRAMS \n- For threading, it is necessary to define the operation as Cycle \n- After FEEDRAT command there must be no RAPTO command \n- No defining lines or points \n- No move to point, line or surface command \n- No macro routines \n-No defining variables \n-No program branching \n- No logical conditions \n- No using CYCLE output except for tapping",
     "Nije predana datoteka."    : "No file provided.",
     "Nepostojeća datoteka."     : "File does not exist.",
     "Neispravna vrsta"          : "Invalid file type (must be .txt).",
