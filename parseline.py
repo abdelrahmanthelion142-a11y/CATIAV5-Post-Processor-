@@ -1,4 +1,4 @@
-import re
+import re                                       #Omugućuje re.split() funkciju za razdvajanje stringa po više znakova
 import math
 # Tapping obavezno preko Output "CYCLE"
 # Naziv, parametri, kompenzacije i svi podaci alata u CATIA-i se MORAJU poklapati sa onima u WinNC-u
@@ -7,73 +7,107 @@ class Myparseline:
         
 
     def __init__(self, LANG, ccmt, ss):
-        self.LANG = LANG
+        self.LANG = LANG                        #Poziv ispisa na odabranom jeziku
         
-        self.ccmt = ccmt
+        self.ccmt = ccmt                        #Varijabla koja određuje hoće li se komentari iz APT datoteke ispisati u izlaznoj datoteci
         
-        self.ss = ss
+        self.ss = ss                            #Varijabla koju određuje korisnik ovisno o tome treba li se prilikom pokretanja vretena M03/M04 ispisivati okretaji ili ne
         
-        self.lsmovement=""
-        self.lsplane=""
-        self.lstiprotation=""
-        self.lsrotation=""
-        self.lstipfedrejt=""
-        self.lssklop=""
-        self.lstip_rev=""
-        self.ls_x = 0.00000
-        self.ls_y = 0.00000
-        self.ls_z = 0.00000
-        self.ls_i = 0.00000
-        self.ls_j = 0.00000
-        self.ls_k = 0.00000
-        self.lsnum = 0.00000
-        self.circlefeed = 0
-        self.ls_on_rotation = ""
-        self.ls_dim_typ = ""
-        self.ls_clnt_typ = ""
-        self.ls_clnt = ""
-        self.ls_cycle = ""
+        self.lsmovement=""                      #Način kretanja alata
+        self.lsplane=""                         #Ravnina xy, xz ili yz
+        self.lsrotation=""                     #Smjer vrtnje vretena 
+        self.ls_tip_rev=""                      #Način definiranja brzine vrtnje
+        self.ls_tip_posmak=""                   #Način posmaka
+        self.lssklop=""                         #Zadnji pozvani alat
+        self.ls_x = 0.00000                     #Zadnja x koordinata alata
+        self.ls_y = 0.00000                     #Zadnja y koordinata alata
+        self.ls_z = 0.00000                     #Zadnja z koordinata alata
+        self.ls_i = 0.00000                     #Zadnja vrijednost i vektora
+        self.ls_j = 0.00000                     #Zadnja vrijednost j vektora
+        self.ls_k = 0.00000                     #Zadnja vrijednost k vektora
+        self.ls_spindle_speed = 0.00000         #Zadnja vrijednost okretaja vretena
+        self.circlefeed = 0.0                   #Brzina posmaka za kružne pokrete
+        self.ls_on_rotation = ""                #Zadnja vrijednost smjera vrtnje vretena
+        self.ls_dim_typ = ""                    #Način definiranja koordinata (apsolutno / inkrementno)
+        self.ls_clnt_typ = ""                   #Način podmazivanja (FLOOD / MIST)
+        self.ls_clnt = ""                       #Zadnja definirana vrijednost podmazivanja (FLOOD / MIST / OFF)
+        self.ls_cycle = ""                      #Zadnji definirani ciklus
+        self.lsunits = ""                       #Mjerni sustav
+        self.komentari = ("LOADTL/", "SELECTL/", "CUTTER/", "INTOL/", "OUTOL/", "TOLER/", "FINI", "END", "PARTNO")      #skraćivanje koda, na ovaj način se ne treba zapisivati line.startswith("comand_name") za svaku komandu posebno
+        self.non_def = ("SWITCH/", "PPFUN", "TOOLNO/", "GO/", "AUTOPS/", "REWIND/" "INDIRP/")
         
         
     def parseline(self, line):
-
+            
+            if line.startswith("PPRINT"):       #prilikom korištenja ICAM post procesora TPRINT se mijenja u PPRINT, ovo skraćuje daljni kod samog parsera
+                line= line.replace("PPRINT", "TPRINT")
+            
             if not line.strip():
                 pass
+                #preskakivanje praznih linija
             
+            elif line.startswith("UNITS"):
+                
+                while "MM" in line or "INCH" in line or "1" in line or "0" in line:
+                    line = input(self.LANG["units"]).strip().upper()
+                    
+                if "MM" in line or "1" in line:
+                    if self.lsunits != "G71":
+                        print("G71")
+                    else:
+                        self.lsunits = "G71"
+                else:
+                    print("G70")
+                    self.lsunits = "G70"
+   
             elif line.startswith("$$"):
                 if "$$ OPERATION NAME" in line:
                     opname = line.split(":")
                     opname2 = opname[1].strip()
 
-                    print(f";{opname2}")
+                    print(";" + opname2)
+                #označavanje početka operacije u završnom kodu
                 
                 elif self.ccmt==1:
                     line = re.sub(r"\$+", "", line)
                     print(f";{line}")
-            
-            elif line.startswith("SWITCH/") or line.startswith("TOOLNO/") or line.startswith("GO/") or line.startswith("AUTOPS/") or line.startswith("REWIND/") or line.startswith("INDIRP/"):
+                #omogućuje da se linije označene sa $$ ispišu u izlaznoj datoteci kao komentari
+                
+            elif line.startswith(self.non_def):
                 print(f"(nije def);{line}")
-            
-            elif self.ccmt==1 and (line.startswith("LOADTL/") or line.startswith("SELCTL/") or line.startswith("CUTTER/")) or line.startswith("INTOL/") or line.startswith("OUTTOL/") or line.startswith("TOLER/"):
+                
+            elif self.ccmt==1 and line.startswith(self.komentari):
                 
                 if line.startswith("LOADTL/") or line.startswith("SELCTL/"):
                     tooln = line.split("/")
                     tool_slot = tooln[1].strip()
-                    print(self.LANG["magazine slot"] + tool_slot)            
+                    print(self.LANG["magazine slot"] + tool_slot)
+                    
                 elif line.startswith("CUTTER/"):
                     cutter = line.split("/")
                     r_ostrice = cutter[1].strip()
-                    print(self.LANG["insert r"] + r_ostrice + "mm")                    
+                    print(self.LANG["insert r"] + r_ostrice + "mm")
+                    
                 elif line.startswith("INTOL/"):
                     intol = line.split("/")[1].strip()
                     print(self.LANG["intol"]+ intol + "mm")
+                    
                 elif line.startswith("OUTTOL/"):
                     outtol = line.split("/")[1].strip()
                     print(self.LANG["outtol"]+ outtol + "mm")
+                    
                 elif line.startswith("TOLER/"):
                     toler = line.split("/")[1].strip()
                     print(self.LANG["toler"]+ toler + "mm")
-            
+                    
+                elif line.startswith("FINI") or line.startswith("END"):
+                    print(self.LANG["kraj"])
+                    
+                elif line.startswith("PARTNO"):
+                    line = line.split("/")[1].strip()
+                    print(self.LANG["partno"] + line)
+                #omogućuje da se linije označene sa navedenim komandama ispišu u izlaznoj datoteci po izboru korisnika kao komentari
+                
             elif line.startswith("TPRINT"):
                 izbor_alat = re.split(r'[,/]+', line)
                 sklop = izbor_alat[1].strip()
@@ -81,9 +115,11 @@ class Myparseline:
                 if self.lssklop != sklop:
                     print(f"T=\"{sklop}\"")
                     self.lssklop=sklop
-                    
+                #poziv alata        
+
             elif "CIRCLE" in line:
-                elements = re.split(r'[ ,/()]+', line)
+                #kretanje alata po krucnici
+                elements = re.split(r'[ ,/()]+', line)                          #izvacenje potrebnih podataka iz linije
                 centar_x = elements[3].strip()
                 centar_y = elements[4].strip()
                 centar_z = elements[5].strip()
@@ -95,26 +131,41 @@ class Myparseline:
                 kraj_y = elements[13].strip()
                 kraj_z = elements[14].strip()
                 
-                kraj_x = float(kraj_x)
-                kraj_y = float(kraj_y)
-                kraj_z = float(kraj_z)
-                
-                kraj_x = round(kraj_x, 3)
-                kraj_y = round(kraj_y, 3)
-                kraj_z = round(kraj_z, 3)
+                if self.lsplane == "0":                                         #Postoji situacija da nož dođe do kružnog luka u racličitoj ravnini od samog luka, za skraćivanje računanja pod INDIRV se provjerava,
+                    while True:                                                 #ako je jedinični vektor definiran preko 2 vektora onda se odmah dobiva podatak o ravnini, a ako je definiran preko 3 vektora ili jednog vektora onda se provjerava koji su centri luka isti i na temelju toga se određuje ravnina
+                        if centar_x==kraj_x:
+                            self.lsplane="G19"
+                            break
+                        elif centar_y==kraj_y:
+                            self.lsplane="G18"
+                            break
+                        elif centar_z==kraj_z:
+                            self.lsplane="G17"
+                            break
+                        else:
+                            print(self.LANG["promjena 3x koord"] + line)
+                            continue
+                    
+                    print(self.lsplane)
+                    
+                kraj_x = round(float(kraj_x), 3)
+                kraj_y = round(float(kraj_y), 3)
+                kraj_z = round(float(kraj_z), 3)
 
                 if centar_x!=centar2_x or centar_y!=centar2_y or centar_z!=centar2_z:
                     print(self.LANG["cta crc cent nije isti"], line)
-            
+                    #provjera ispravnosti podataka u apt file-u
+                    
                 if self.lsplane == "G18":
+                    #odabir koordinata za kružnicu u xz ravini
                     vektor2_x=float(self.ls_x)-float(centar_x)
                     vektor2_z=float(self.ls_z)-float(centar_z)
-                    D=float(self.ls_i)*vektor2_z-vektor2_x*float(self.ls_k)
+                    D=float(self.ls_i)*vektor2_z-vektor2_x*float(self.ls_k)     #definiranje smjera kružnice (2D unakrsni produkt)
                     
                     vektor2_x=round(-(vektor2_x), 3)
                     vektor2_z=round(-(vektor2_z), 3)
                 
-                    if D<0:
+                    if D<0:                                                     #definiranje smjera kružnog luka ovisno o smjeru unakrsnog produkta
                         movement="G2"
                     elif D>0:
                         movement="G3"
@@ -155,11 +206,12 @@ class Myparseline:
                     else:
                         print(self.LANG["sredina na tang"] + line)
                     koord=f"Y{kraj_y} Z{kraj_z} J{vektor2_y} K{vektor2_z}"
+                    
                 else:
                     print(self.LANG["nepoznata ravnina"] + line)
-                    
-                if not (self.circlefeed > 0):
-                    self.circlefeed = round(float(input(self.LANG["circle feed"])), 3)
+                
+                while self.circlefeed <= 0.0:                                     #pošto je potrebno definirati brzinu posmaka za kružne pokrete, korisnik mora unijeti vrijednost posmaka
+                    self.circlefeed = round(float(input(self.LANG["circle feed"] + self.ls_tip_posmak)), 3)
             
                 print(movement, koord, self.circlefeed)
             
@@ -169,121 +221,114 @@ class Myparseline:
                 self.lsmovement=movement
             
             elif line.startswith("GODLTA"):
-                
+                #definiranje incrementnog pomaka
                 if self.ls_dim_typ != "G91":
                     print("G91", end=" ")
                     self.ls_dim_typ="G91"
                     
                 coords = re.split(r'[,/]+', line)
                 if len(coords)==4:
-                    x = coords[1].strip()
-                    y = coords[2].strip()
-                    z = coords[3].strip()
+                    x = float(coords[1].strip())
+                    y = float(coords[2].strip())
+                    z = float(coords[3].strip())
                     
                 elif len(coords)==2:
-                    x = "0"
-                    y = "0"
-                    z = coords[1].strip()
+                    x = 0
+                    y = 0
+                    z = float(coords[1].strip())
                     
                 else:
                     print(self.LANG["neispravan godlta"] + line)
                     return
                 
-                x = float(x)
-                y = float(y)
-                z = float(z)
-                
-                if y==0:
-                    koord_y=" "
+                if y==0:                                #ako je y=0 onda nije yz niti xy nego xz
+                    koord_y=""
                     ravnina="G18"
                     if x==0:
-                        koord_x=" "
+                        koord_x=""                     #ako je x=0 onda se nezapisuje x koord
                     else:
-                        koord_x=(f"X{round(x, 3)}")
+                        koord_x=(f"X{round(x, 3)}")     #ako je x!=0 onda se zapisuje x koord
                     if z==0:
-                        koord_z=" "                    
+                        koord_z=""                     #ako je z=0 onda se nezapisuje z koord
                     else:
-                        koord_z=(f"Z{round(z, 3)}")      
-                elif x!=0:
-                    koord_z=" "
+                        koord_z=(f"Z{round(z, 3)}")     #ako je z!=0 onda se zapisuje z koord
+                elif x!=0:                              #ako y nije =0 onda. je neki broj znači yz ili xy, pa ako je x!=0 onda je xy
+                    koord_z=""
                     ravnina="G17"
                     if x==0:
-                        koord_x=" "
+                        koord_x=""
                     else:
                         koord_x=(f"X{round(x, 3)}")
                     if y==0:
-                        koord_y=" "
+                        koord_y=""
                     else:
                         koord_y=(f"Y{round(y, 3)}")       
-                elif z!=0:  
-                    koord_x=" "
+                elif z!=0:                              #ako y!=0 i z je neki broj onda je yz ravnina
+                    koord_x=""
                     ravnina="G19"
                     if y==0:
-                        koord_y=" "
+                        koord_y=""
                     else:
                         koord_y=(f"Y{round(y, 3)}")
                     if z==0:
-                        koord_z=" "                    
+                        koord_z=""                    
                     else:
                         koord_z=(f"Z{round(z, 3)}")       
-                else:
+                else:                                   #ako su x,y,z!=0 onda je promjena 3 koordinate u jednoj liniji što nije moguće bez multiaxis
                     print(self.LANG["promjena 3x koord"] + line)
                     
-                if self.lsplane != ravnina:
+                if self.lsplane != ravnina:             #ako je ravnina promijenjena onda se ispisuje nova ravnina
                     print(ravnina, end=" ")
                     self.lsplane=ravnina
                     
-                self.ls_x = round((self.ls_x + float(x)), 3)
-                self.ls_y = round((self.ls_y + float(y)), 3)
-                self.ls_z = round((self.ls_z + float(z)), 3)
+                self.ls_x = round((self.ls_x + x), 3)   #definiranje novih koordinata alata u odnosu na prethodne koordinate obzirom da je inkrementni pomak, aidući pomak može biti apsolutni
+                self.ls_y = round((self.ls_y + y), 3)
+                self.ls_z = round((self.ls_z + z), 3)
 
                 print(koord_x, koord_y, koord_z)
         
             elif line.startswith("GOTO"):
+                #definiranje apsolutnog pomaka
                 if self.ls_dim_typ != "G90":
                     print("G90", end=" ")
                     self.ls_dim_typ="G90"
                 
                 coords = re.split(r'[,/]+', line)
-                x = coords[1].strip()
-                y = coords[2].strip()
-                z = coords[3].strip()
-                
-                x = float(x)
-                y = float(y)
-                z = float(z)
+                x = float(coords[1].strip())
+                y = float(coords[2].strip())
+                z = float(coords[3].strip())
                 
                 if y==self.ls_y:
-                    koord_y=" "
+                    koord_y=""
                     ravnina="G18"
                     if x==self.ls_x:
-                        koord_x=" "
+                        koord_x=""
                     else:
                         koord_x=(f"X{round(x, 3)}")
                     if z==self.ls_z:
-                        koord_z=" "                    
+                        koord_z=""                    
                     else:
                         koord_z=(f"Z{round(z, 3)}")      
                 elif x!=self.ls_x:
-                    koord_z=" "
+                    koord_z=""
                     ravnina="G17"
                     if x==self.ls_x:
-                        koord_x=" "
+                        koord_x=""
                     else:
                         koord_x=(f"X{round(x, 3)}")
                     if y==self.ls_y:
-                        koord_y=" "
+                        koord_y=""
                     else:
                         koord_y=(f"Y{round(y, 3)}")       
                 elif z!=self.ls_z:
-                    koord_x=" "
+                    koord_x=""
                     ravnina="G19"
                     if y==self.ls_y:
-                        koord_y=" "
+                        koord_y=""
                     else:
                         koord_y=(f"Y{round(y, 3)}")
                     if z==self.ls_z:
-                        koord_z=" "                    
+                        koord_z=""                    
                     else:
                         koord_z=(f"Z{round(z, 3)}")       
                 else:
@@ -302,55 +347,48 @@ class Myparseline:
             elif line.startswith("SPINDL"):
                 if "OFF" in line:
                     rotation="OFF"
+                    
                 elif not ("ON" in line):
                     spindlDT = re.split(r'[,/]+', line)
-                    num = spindlDT[1].strip()
-                    tip = spindlDT[2].strip()
-                    rotation = spindlDT[3].strip()
+                    if len(spindlDT)==4:
+                        num = spindlDT[1].strip()
+                        posmak_tip = spindlDT[2].strip()
+                        rotation = spindlDT[3].strip()
                 
-                    self.lsnum = round(float(num), 3)
+                        self.ls_spindle_speed = round(float(num), 3)
 
-                    while True:
-                        if tip == "SFM":
-                            tipfedrejt=("G96 ")
-                            self.lstip_rev=tip
-                            break
-                        elif tip == "RPM":
-                            tipfedrejt=("G97 ")
-                            self.lstip_rev=tip
-                            break
-                        else:
+                        while posmak_tip not in ("SFM", "RPM"):
                             print(self.LANG["nepoznat posmak"] + line)
-                            tip = input(self.LANG["posmak"]).strip().upper()
+                            posmak_tip = input(self.LANG["posmak"]).strip().upper()
+
+                        tipfedrejt = "G96 " if posmak_tip == "SFM" else "G97 "
+                        self.ls_tip_rev = tipfedrejt.strip()
+
                     
-                    if self.lstiprotation != tipfedrejt:
-                        print(tipfedrejt, end=" ")
-                        self.lstiprotation=tipfedrejt
+                        if self.ls_tip_rev != posmak_tip:
+                            print(tipfedrejt, end=" ")
+                            self.ls_tip_rev=tipfedrejt
                     
-                    print("S"+ str(round(float(num), 3)))
+                        print("S"+ str(round(float(num), 3)))
+                        
+                    else:
+                        print(self.LANG["neispravni podaci"])
                     
                 elif "ON" in line:
-                    print(self.ls_on_rotation)
+                    print(self.ls_on_rotation, end=" ")
                     if self.ss==1:
-                        print("S"+ str(self.lsnum)+ " " + self.lstip_rev)
+                        print("S"+ str(self.ls_spindle_speed)+ " " + self.ls_tip_rev)
                     
+                while rotation not in ("CLW", "CCLW", "OFF"):
+                    rotation = input(self.LANG["spindle m3/m4"] + f" ({line}) : ").strip().upper()
 
-                while True:    
-                    if rotation == "CLW":
-                        smjervrtnje=("M3 ")
-                        self.ls_on_rotation="M3 "
-                        break
-                    elif rotation == "CCLW":
-                        smjervrtnje=("M4 ")
-                        self.ls_on_rotation="M4 "
-                        break
-                    elif rotation== "OFF":
-                        smjervrtnje=("M5 ")
-                        break
-                    else:
-                        rotation = input(self.LANG["spindle m3/m4"] + f" ({line})       : ").strip().upper()
-                        continue
-                    
+                smjer = {"CLW": "M3 ", "CCLW": "M4 ", "OFF": "M5 "}
+                smjervrtnje = smjer[rotation]
+
+                if rotation in ("CLW", "CCLW"):
+                    self.ls_on_rotation = smjervrtnje
+ 
+ 
                 if self.lsrotation != smjervrtnje:
                     print(smjervrtnje, end=" ")
                     
@@ -360,33 +398,27 @@ class Myparseline:
                     self.lsrotation=smjervrtnje
                     
             elif line.startswith("FEDRAT"):
-                if "RAPTO" in line:
-                    line = line.split("RAPTO")[0].strip()
+                if "RAPTO" in line:                             #RAPTO se koristi u starijim verzijama APT koda ali se može pojaviti i u novijim verzijama, RAPTO ide nakon standarnog definiranja FEDRAT/ i kaže
+                    line = line.replace("RAPTO", "").strip()    #da se alat kreće u brzome hodu do neke udaljenosti od zavšne točke po liniji (linija može biti kosa) i da nastavi hod do kraja po zadanom feedrate-u
                 
                 feed = re.split(r'[,/]+', line)
                 numf = feed[1].strip()
                 vrstaf = feed[2].strip()
-                
-                while True:
-                    if vrstaf == "MMPR" or vrstaf == "REV":
-                        fedrejt=("G95")
-                        break   
-                    elif vrstaf == "MMPM" or vrstaf == "MIN":  
-                        fedrejt=("G94")
-                        break
-                    else:
-                        print(self.LANG["feedrat err"] + line)
-                        vrstaf = input(self.LANG["feedrat"]).strip().upper()
-                    
-                if self.lstipfedrejt != fedrejt:
-                    print(fedrejt, end=" ")
-                    self.lstipfedrejt=fedrejt
+            
+                while vrstaf not in ("MMPR", "REV", "MMPM", "MIN"):
+                    vrstaf = input(self.LANG["feedrat err"]).strip().upper()
+
+                tip_posmak = "G95" if vrstaf in ("MMPR", "REV") else "G94"
+    
+                if self.ls_tip_posmak != tip_posmak:
+                    print(tip_posmak, end=" ")
+                    self.ls_tip_posmak = tip_posmak
                     
                 movement="G1"
                 
                 if self.lsmovement != movement:
                         print(movement, end=" ")
-                        self.lsmovement=movement
+                        self.lsmovement = movement
                 
                 print("F"+ str(round(float(numf), 3)))
                 
@@ -396,56 +428,66 @@ class Myparseline:
                 self.ls_j=vektor[2].strip()
                 self.ls_k=vektor[3].strip()
                 
+                if float(self.ls_i)!=0 and float(self.ls_j)!=0:
+                    plane="G17"
+                elif float(self.ls_i)!=0 and float(self.ls_k)!=0:
+                    plane="G18"
+                elif float(self.ls_j)!=0 and float(self.ls_k)!=0:
+                    plane="G19"
+                else:
+                    plane="0"
+                    
+                if self.lsplane != plane:
+                    print(plane, end=" ") if plane != "0" else None
+                    self.lsplane=plane
+                
             elif line.startswith("RAPID"):
                 if self.lsmovement != "G0":
                     print("G0 ")
                     self.lsmovement="G0"
-                    
+                
+                #u starijim verzijama APT koda RAPUD se može spajati sa drugim komandama poput GOTO ili GODLTA    
                 if "GOTO" in line:
                     if self.ls_dim_typ != "G90":
                         print("G90", end=" ")
                         self.ls_dim_typ="G90"
                     
                     elements = re.split(r'[ ,/]+', line)
-                    x = elements[2].strip()
-                    y = elements[3].strip()
-                    z = elements[4].strip()
-                    
-                    x = float(x)
-                    y = float(y)
-                    z = float(z)
+                    x = float(elements[2].strip())
+                    y = float(elements[3].strip())
+                    z = float(elements[4].strip())
                     
                     if y==self.ls_y:
-                        koord_y=" "
+                        koord_y=""
                         ravnina="G18"
                         if x==self.ls_x:
-                            koord_x=" "
+                            koord_x=""
                         else:
                             koord_x=(f"X{round(x, 3)}")
                         if z==self.ls_z:
-                            koord_z=" "                    
+                            koord_z=""                    
                         else:
                             koord_z=(f"Z{round(z, 3)}")      
                     elif x!=self.ls_x:
-                        koord_z=" "
+                        koord_z=""
                         ravnina="G17"
                         if x==self.ls_x:
-                            koord_x=" "
+                            koord_x=""
                         else:
                             koord_x=(f"X{round(x, 3)}")
                         if y==self.ls_y:
-                            koord_y=" "
+                            koord_y=""
                         else:
                             koord_y=(f"Y{round(y, 3)}")       
                     elif z!=self.ls_z:
-                        koord_x=" "
+                        koord_x=""
                         ravnina="G19"
                         if y==self.ls_y:
-                            koord_y=" "
+                            koord_y=""
                         else:
                             koord_y=(f"Y{round(y, 3)}")
                         if z==self.ls_z:
-                            koord_z=" "                    
+                            koord_z=""                    
                         else:
                             koord_z=(f"Z{round(z, 3)}")       
                     else:
@@ -468,51 +510,47 @@ class Myparseline:
                     elements = re.split(r'[,/]+', line)
                     
                     if len(elements)==4:
-                        x = elements[2].strip()
-                        y = elements[3].strip()
-                        z = elements[4].strip()
+                        x = float(elements[2].strip())
+                        y = float(elements[3].strip())
+                        z = float(elements[4].strip())
                     elif len(elements)==2:
-                        x = "0"
-                        y = "0"
-                        z = elements[2].strip()
+                        x = 0
+                        y = 0
+                        z = float(elements[2].strip())
                     else:
                         print(self.LANG["neispravan godlta"] + line)
-                        
-                    x = float(x)
-                    y = float(y)
-                    z = float(z)
                 
                     if y==0:
-                        koord_y=" "
+                        koord_y=""
                         ravnina="G18"
                         if x==0:
-                            koord_x=" "
+                            koord_x=""
                         else:
                             koord_x=(f"X{round(x, 3)}")
                         if z==0:
-                            koord_z=" "                    
+                            koord_z=""                    
                         else:
                             koord_z=(f"Z{round(z, 3)}")      
                     elif x!=0:
-                        koord_z=" "
+                        koord_z=""
                         ravnina="G17"
                         if x==0:
-                            koord_x=" "
+                            koord_x=""
                         else:
                             koord_x=(f"X{round(x, 3)}")
                         if y==0:
-                            koord_y=" "
+                            koord_y=""
                         else:
                             koord_y=(f"Y{round(y, 3)}")       
                     elif z!=0:  
-                        koord_x=" "
+                        koord_x=""
                         ravnina="G19"
                         if y==0:
-                            koord_y=" "
+                            koord_y=""
                         else:
                             koord_y=(f"Y{round(y, 3)}")
                         if z==0:
-                            koord_z=" "                    
+                            koord_z=""                    
                         else:
                             koord_z=(f"Z{round(z, 3)}")       
                     else:
@@ -528,140 +566,145 @@ class Myparseline:
                     
                     print(koord_x, koord_y, koord_z)
                                
-            elif line.startswith("FINI") or line.startswith("END"):
+            
                 print("M30")
             
-            elif line.startswith("PARTNO"):
-                print("G55" + "\n" + "DIAMOF" + "\n" + "#DEFINIRATI SIROVAC")
 
-            elif line.startswith("CYCLE/"):
+
+            # elif line.startswith("CYCLE/"):       
+            #     if "CYCLE/ON" in line:
+            #         if self.ls_cycle != "":
+            #             print(self.ls_cycle)
+            #         else:
+            #             print(self.LANG["Nema ciklusa"])
+                        
+            #     elif "TAP" in line:
+            #         tap = line.split(",")
+            #         dubina = tap[1].strip()
+            #         pitch = tap[2].strip()
                 
-                if "TAP" in line:
-                    tap= line.split(",")
-                    dubina= tap[1].strip()
-                    pitch= tap[2].strip()
-                
-                    while True:
-                        if self.lsrotation == "M3 " or self.lsrotation == "CLW ":
-                            returnsmj = "M4"
-                            break
-                        elif self.lsrotation == "M4 " or self.lsrotation == "CCLW ":
-                            returnsmj = "M3"
-                            break
-                        else:
-                            self.lsrotation = input(self.LANG["spindle m3/m4"]).strip().upper() + " "
-                            continue
+            #         while True:
+            #             if self.lsrotation == "M3 " or self.lsrotation == "CLW ":
+            #                 returnsmj = "M4"
+            #                 self.lsrotation = "M3 "
+            #                 break
+            #             elif self.lsrotation == "M4 " or self.lsrotation == "CCLW ":
+            #                 returnsmj = "M3"
+            #                 self.lsrotation = "M4 "
+            #                 break
+            #             else:
+            #                 self.lsrotation = input(self.LANG["spindle m3/m4"]).strip().upper() + " "
+            #                 continue
                     
-                    povrsina = float(input(self.LANG["tap depth"] ).strip()) 
+            #         povrsina = float(input(self.LANG["tap depth"] ).strip()) 
                           
-                    depth = round((povrsina - float(dubina)), 3)
+            #         depth = round((povrsina - float(dubina)), 3)
                     
-                    while True:
-                        holder = input(self.LANG["holder type"]).strip()
-                        if holder == "0":
-                            if self.lstip_rev == "SFM":
-                                F = self.lsnum * pitch
-                            elif self.lstip_rev == "RPM":
-                                F = pitch
-                            else:
-                                print(self.LANG["nepoznat posmak"] + line)
-                            self.ls_cycle="G63 Z"+str(depth)+" F"+str(F)+" "+returnsmj
-                            print(self.ls_cycle)
-                            break
-                        elif holder == "1":
-                            self.ls_cycle="G331 Z"+str(depth)+" F"+str(pitch)+" \n G332 Z"+str(depth)+" "+returnsmj
-                            print(self.ls_cycle)
-                            break
-                        else:
-                            print(self.LANG[";Krivi broj"])
-                            continue
+            #         while True:
+            #             holder = input(self.LANG["holder type"]).strip()
+            #             if holder == "0":
+            #                 if self.ls_tip_rev == "SFM":
+            #                     F = self.ls_spindle_speed * pitch
+            #                 elif self.ls_tip_rev == "RPM":
+            #                     F = pitch
+            #                 else:
+            #                     print(self.LANG["nepoznat posmak"] + line)
+            #                 self.ls_cycle="G63 Z"+str(depth)+" F"+str(F)+" "+returnsmj
+            #                 print(self.ls_cycle)
+            #                 break
+            #             elif holder == "1":
+            #                 self.ls_cycle="G331 Z"+str(depth)+" F"+str(pitch)+" \n G332 Z"+str(depth)+" "+returnsmj
+            #                 print(self.ls_cycle)
+            #                 break
+            #             else:
+            #                 print(self.LANG[";Krivi broj"])
+            #                 continue
                         
-                elif "CYCLE/ON" in line:
-                    if self.ls_cycle != "":
-                        print(self.ls_cycle)
-                    else:
-                        print(self.LANG["Nema ciklusa"])
-                        
-                elif line.startswith("CYCLE/DRILL"):
-                    elements = line.split(",")
-                    depth = elements[1].strip()
-                    posmak = elements[2].strip()
-                    fedrejt = elements[3].strip()
+            #     elif line.startswith("CYCLE/DRILL"):
+            #         elements = line.split(",")
+            #         depth = elements[1].strip()
+            #         posmak_value = elements[2].strip()
+            #         posmak_tip = elements[3].strip()
                     
-                    while True:
-                        if fedrejt == "MMPR" or fedrejt == "REV":
-                            self.lstipfedrejt = "G95"
-                            print(self.lstipfedrejt)
-                            break
-                        elif fedrejt == "MMPM" or fedrejt == "MIN":
-                            self.lstipfedrejt = "G94"
-                            print(self.lstipfedrejt)
-                            break
-                        else:
-                            print(self.LANG["feedrat err"] + line)
-                            fedrejt = input(self.LANG["feedrat"]).strip().upper()
-                            continue
+            #         posmak_value = round(float(posmak_value), 3)
                     
-                    self.ls_cycle = "G81 X" + self.ls_x + " Y" + self.ls_y + " Z" + depth + " R" + self.ls_z + " F" + posmak
-                    print(self.ls_cycle)
+            #         if len(elements) == 4:
+            #             clearance = elements[4].strip()
+            #         else:
+            #             clearance = "0"
                     
-                elif line.startswith("CYCLE/DEEP"):
-                    elements = line.split(",")
-                    depth = elements[1].strip()
-                    posmak = elements[2].strip()
-                    fedrejt = elements[3].strip()
-                    clearance = elements[4].strip()
-                    incr = elements[5].strip()
-                    peck = elements[6].strip()
+            #         while True:
+            #             if posmak_tip == "MMPR" or posmak_tip == "REV":
+            #                 self.ls_tip_posmak = "G95"
+            #                 break
+            #             elif posmak_tip == "MMPM" or posmak_tip == "MIN":
+            #                 self.ls_tip_posmak = "G94"
+            #                 break
+            #             else:
+            #                 posmak_tip = input(self.LANG["feedrat err"] + line).strip().upper()                           
+            #                 continue
                     
-                    while True:
-                        if fedrejt == "MMPR" or fedrejt == "REV":
-                            self.lstipfedrejt = "G95"
-                            print(self.lstipfedrejt)
-                            break
-                        elif fedrejt == "MMPM" or fedrejt == "MIN":
-                            self.lstipfedrejt = "G94"
-                            print(self.lstipfedrejt)
-                            break
-                        else:
-                            print(self.LANG["feedrat err"] + line)
-                            fedrejt = input(self.LANG["feedrat"]).strip().upper()
-                            continue
+            #         if posmak_value != self.ls_spindle_speed:
+            #             self.ls_spindle_speed = posmak_value
+            #         self.ls_cycle = "\n G91" + self.ls_tip_posmak + " F" + posmak_value + " G98 G81"+" R-" + clearance + " Z-" + depth + " F" + posmak_value + "\n G80"
+            #         print(self.ls_cycle)
                     
-                    self.ls_cycle = "G83 X" + self.ls_x + " Y" + self.ls_y + " Z" + depth + " R" + self.ls_z + " F" + posmak + " Q" + peck
-                    print(self.ls_cycle)
+            #     elif line.startswith("CYCLE/DEEP"):
+            #         #G83 XYZ R P Q F L p-dwell na dnu q-peck velicina f-fedrajt
+            #         #CYC/DEEP, z depth, fedrat, fedrattyp, clearance, incrementalni posmak, peck   APT
+            #         elements = line.split(",")
+            #         depth = elements[1].strip()
+            #         posmak_value = elements[2].strip()
+            #         posmak_tip = elements[3].strip()
+            #         clearance = elements[4].strip()
+            #         peck = elements[6].strip()
+                    
+            #         while True:
+            #             if posmak_tip == "MMPR" or posmak_tip == "REV" or posmak_tip == "0":
+            #                 self.ls_tip_posmak = "G95"
+            #                 break
+            #             elif posmak_tip == "MMPM" or posmak_tip == "MIN" or posmak_tip == "1":
+            #                 self.ls_tip_posmak = "G94"
+            #                 break
+            #             else:
+            #                 posmak_tip = input(self.LANG["feedrat err"] + line).strip().upper()
+            #                 continue
+                    
+            #         self.ls_cycle = "\n G91" + self.ls_tip_posmak + " F" + posmak_value + " G98 G83"+" R-" + clearance + " Z-" + depth + " F" + posmak_value + "\n G80"
+            #         print(self.ls_cycle)
                 
-                elif line.startswith("CYCLE/BORE"):
-                    elements = line.split(",")
-                    depth = elements[1].strip()
-                    posmak = elements[2].strip()
-                    fedrejt = elements[3].strip()
+            #     elif line.startswith("CYCLE/BORE"):
+            #         elements = line.split(",")
+            #         depth = elements[1].strip()
+            #         posmak_value = elements[2].strip()
+            #         posmak_tip = elements[3].strip()
                     
-                    while True:
-                        if fedrejt == "MMPR" or fedrejt == "REV":
-                            self.lstipfedrejt = "G95"
-                            print(self.lstipfedrejt)
-                            break
-                        elif fedrejt == "MMPM" or fedrejt == "MIN":
-                            self.lstipfedrejt = "G94"
-                            print(self.lstipfedrejt)
-                            break
-                        else:
-                            print(self.LANG["feedrat err"] + line)
-                            fedrejt = input(self.LANG["feedrat"]).strip().upper()
-                            continue
+            #         while True:
+            #             if fedrejt == "MMPR" or fedrejt == "REV":
+            #                 self.ls_tip_posmak = "G95"
+            #                 print(self.ls_tip_posmak)
+            #                 break
+            #             elif fedrejt == "MMPM" or fedrejt == "MIN":
+            #                 self.ls_tip_posmak = "G94"
+            #                 print(self.ls_tip_posmak)
+            #                 break
+            #             else:
+            #                 fedrejt = input(self.LANG["feedrat err"] + line).strip().upper()
+            #                 continue
                     
-                    self.ls_cycle = "G85 X" + self.ls_x + " Y" + self.ls_y + " Z" + depth + " R" + self.ls_z + " F" + posmak
-                    print(self.ls_cycle)
+            #         self.ls_cycle = "G85 X" + self.ls_x + " Y" + y + " Z" + z + " R" + r + " F" + posmak
+            #         print(self.ls_cycle)
                                                                                                             
             elif line.startswith("COOLNT"):
+                elements=line.split("/")
+                clon=elements[1]
+                
                 while True:
-                    if "OFF" in line or "FLOOD" in line or "MIST" in line:
-                        coolnt=line.split("/")
-                        clon=coolnt[1].strip()
+                    if "OFF" in line or "FLOOD" in line or "MIST" in line or clon == "0" or clon == "1" or clon == "2" or clon == "3" or clon == "ON" or clon == "OFF" or clon == "FLOOD" or clon == "MIST":
+                        clon=clon.strip().upper()
                         break
                     else:
-                        clon = input(self.LANG["coolnt on off"] + line + "--> : ").strip().upper()
+                        clon = input(self.LANG["coolant on off"] + line + "--> : ").strip().upper()
                         continue
                     
                 while True:
@@ -702,5 +745,3 @@ class Myparseline:
             
             else:
                 print(self.LANG["Nepoznata naredba"], line)
-      
-      #or line.startswith("GORGT") or line.startswith("GOLFT") or line.startswith("GOFWD") or line.startswith("GOBACK") or line.startswith("GODOWN") or line.startswith("GOUP") or line.startswith("TLON") or line.startswith("TLRGT")  or line.startswith("TLLFT")

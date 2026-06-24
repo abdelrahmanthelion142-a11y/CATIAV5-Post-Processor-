@@ -64,6 +64,7 @@ if not os.path.isfile(input_file):
 
 print(LANG["Datoteka učitana:"], input_file)
 print(LANG["Učitavanje linija"])
+print("G55\nDIAMOF\n#DEFINIRATI SIROVAC")
 
 parse = Myparseline(LANG, ccmt, ss)
 
