@@ -1,5 +1,5 @@
 # Python
-This is the only open source Post processor made for CATIAV5 APT 1.0 code that makes G-code for WinNCv(newer verion)
+This is the only open source Post processor made for CATIAV5 APT 1.0 code that makes G-code for WinNC(newer verion)
 
 
 Due to low funding some features like being able to post process APT files from various CAM softwares as well as to output into various G-code standards do not exist. Because it takes a LOT of research and resources that I do not have aviable.
